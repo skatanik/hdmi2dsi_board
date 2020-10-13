@@ -10,3 +10,9 @@
 [submodule "rtl/verilog-i2c"]
 	path = rtl/verilog-i2c
 	url = https://github.com/alexforencich/verilog-i2c.git
+[submodule "rtl/uart_ip/verilog-uart"]
+	path = rtl/uart_ip/verilog-uart
+	url = https://github.com/alexforencich/verilog-uart.git
+[submodule "rtl/i2c_ip/verilog-i2c"]
+	path = rtl/i2c_ip/verilog-i2c
+	url = https://github.com/alexforencich/verilog-i2c.git
