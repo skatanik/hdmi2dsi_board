@@ -1,0 +1,59 @@
+2020-06-30 16:35:47 23284    [ERROR] Open file: File "D:\git\dsi_controller\pcb_model\schematic_tests\boost_conv.ref" cannot be opened Starting with new file
+2020-06-30 16:41:59 23284     [INFO] HyperLynx: Сохранить изменения в boost_conv.ffs? - The "Yes" button was selected
+2020-06-30 16:42:01 23284     [INFO] Closing Schematic: boost_conv.ffs
+2020-06-30 16:43:12 23284     [INFO] Opening Project C:\mentorgraphics\HLVX.2.6\SDD_HOME\hyperlynx64\HypFiles\lossy.ffs
+2020-06-30 16:49:28 23284     [INFO] Opened Schematic: D:\git\dsi_controller\pcb_model\schematic_tests\boost_conv.ffs
+2020-06-30 16:54:42 23284     [INFO] Generated HyperLynx IC Model Index: C:\mentorgraphics\HLVX.2.6\SDD_HOME\hyperlynx64\Libs\HyperLynxIcModels.csv
+2020-06-30 17:18:48 23284  [WARNING] Unable to assign model pin name to IC pin. The name is already in use.
+2020-06-30 17:26:07 23284  [WARNING] Unable to assign model pin name to IC pin. The name is already in use.
+2020-06-30 17:26:30 23284    [ERROR] No waveform is selected. Select waveform before attempting this command.
+2020-06-30 17:26:47 23284  [WARNING] Warning: No probes are enabled. Please enable at least one before simulating.
+2020-06-30 17:30:28 23284    [ERROR] No waveform is selected. Select waveform before attempting this command.
+2020-06-30 17:31:24 23284    [ERROR] Eye Width: Not found.
+2020-06-30 17:37:11 23284  [WARNING] Warning: No probes are enabled. Please enable at least one before simulating.
+2020-06-30 17:48:03 23284  [WARNING] HyperLynx: Via can be connected to transmission lines only
+2020-06-30 17:48:10 23284  [WARNING] HyperLynx: Only stackup t-lines may be connected to via symbol
+2020-06-30 17:48:17 23284  [WARNING] HyperLynx: Only stackup t-lines may be connected to via symbol
+2020-06-30 17:55:58 23284  [WARNING] Assign Stimulus: Stimulus has been modified. Close the dialog without saving changes? - The "Yes" button was selected
+2020-06-30 18:10:50 23284  [WARNING] HyperLynx: Direct connection of a power/ground net to another power/ground net is not supported. Use a passive component to connect power/ground nets.
+2020-06-30 18:10:51 23284  [WARNING] HyperLynx: Direct connection of a power/ground net to another power/ground net is not supported. Use a passive component to connect power/ground nets.
+2020-06-30 18:10:52 23284  [WARNING] HyperLynx: Direct connection of a power/ground net to another power/ground net is not supported. Use a passive component to connect power/ground nets.
+2020-06-30 18:10:53 23284  [WARNING] HyperLynx: Direct connection of a power/ground net to another power/ground net is not supported. Use a passive component to connect power/ground nets.
+2020-06-30 18:10:53 23284  [WARNING] HyperLynx: Direct connection of a power/ground net to another power/ground net is not supported. Use a passive component to connect power/ground nets.
+2020-06-30 18:10:54 23284  [WARNING] HyperLynx: Direct connection of a power/ground net to another power/ground net is not supported. Use a passive component to connect power/ground nets.
+2020-06-30 18:11:06 23284  [WARNING] HyperLynx: Direct connection of a power/ground net to another power/ground net is not supported. Use a passive component to connect power/ground nets.
+2020-06-30 18:11:08 23284  [WARNING] HyperLynx: Direct connection of a power/ground net to another power/ground net is not supported. Use a passive component to connect power/ground nets.
+2020-06-30 18:11:08 23284  [WARNING] HyperLynx: Direct connection of a power/ground net to another power/ground net is not supported. Use a passive component to connect power/ground nets.
+2020-06-30 18:11:08 23284  [WARNING] HyperLynx: Direct connection of a power/ground net to another power/ground net is not supported. Use a passive component to connect power/ground nets.
+2020-06-30 18:11:09 23284  [WARNING] HyperLynx: Direct connection of a power/ground net to another power/ground net is not supported. Use a passive component to connect power/ground nets.
+2020-06-30 18:11:09 23284  [WARNING] HyperLynx: Direct connection of a power/ground net to another power/ground net is not supported. Use a passive component to connect power/ground nets.
+2020-06-30 18:11:10 23284  [WARNING] HyperLynx: Direct connection of a power/ground net to another power/ground net is not supported. Use a passive component to connect power/ground nets.
+2020-06-30 18:11:23 23284  [WARNING] HyperLynx: Direct connection of a power/ground net to another power/ground net is not supported. Use a passive component to connect power/ground nets.
+2020-06-30 18:11:24 23284  [WARNING] HyperLynx: Direct connection of a power/ground net to another power/ground net is not supported. Use a passive component to connect power/ground nets.
+2020-06-30 18:11:28 23284  [WARNING] HyperLynx: Direct connection of a power/ground net to another power/ground net is not supported. Use a passive component to connect power/ground nets.
+2020-06-30 18:11:28 23284  [WARNING] HyperLynx: Direct connection of a power/ground net to another power/ground net is not supported. Use a passive component to connect power/ground nets.
+2020-06-30 18:11:28 23284  [WARNING] HyperLynx: Direct connection of a power/ground net to another power/ground net is not supported. Use a passive component to connect power/ground nets.
+2020-06-30 18:11:29 23284  [WARNING] HyperLynx: Direct connection of a power/ground net to another power/ground net is not supported. Use a passive component to connect power/ground nets.
+2020-06-30 18:11:29 23284  [WARNING] HyperLynx: Direct connection of a power/ground net to another power/ground net is not supported. Use a passive component to connect power/ground nets.
+2020-06-30 18:11:29 23284  [WARNING] HyperLynx: Direct connection of a power/ground net to another power/ground net is not supported. Use a passive component to connect power/ground nets.
+2020-06-30 18:12:01 23284  [WARNING] HyperLynx: Direct connection of a power/ground net to another power/ground net is not supported. Use a passive component to connect power/ground nets.
+2020-06-30 18:12:02 23284  [WARNING] HyperLynx: Direct connection of a power/ground net to another power/ground net is not supported. Use a passive component to connect power/ground nets.
+2020-06-30 18:17:10 23284  [WARNING] Differential Pairs: Do you want to delete this probe ? - The "Yes" button was selected
+2020-06-30 18:58:32 23284  [WARNING] HyperLynx: Via can be connected to transmission lines only
+2020-06-30 18:58:40 23284  [WARNING] HyperLynx: Via can be connected to transmission lines only
+2020-06-30 18:58:44 23284  [WARNING] HyperLynx: Via can be connected to transmission lines only
+2020-06-30 18:58:49 23284  [WARNING] HyperLynx: Only stackup t-lines may be connected to via symbol
+2020-06-30 21:04:46 23284     [INFO] HyperLynx: Сохранить изменения в dphy.ffs? - The "Yes" button was selected
+2020-06-30 21:04:47 23284     [INFO] Closing Schematic: dphy.ffs
+2020-06-30 21:04:49 23284     [INFO] ****** Closing HyperLynx 
+2020-06-30 21:05:01 2528     [INFO] ****** HyperLynx v2.6 build 14488140 
+2020-06-30 21:05:01 2528     [INFO]        C:\mentorgraphics\HLVX.2.6\SDD_HOME\hyperlynx64\bsw.exe 
+2020-06-30 21:05:01 2528     [INFO] Opening Project D:\git\dsi_controller\pcb_model\schematic_tests\boost_conv.ffs
+2020-06-30 21:05:01 2528     [INFO] Opened Schematic: D:\git\dsi_controller\pcb_model\schematic_tests\boost_conv.ffs
+2020-06-30 21:05:08 2528     [INFO] HyperLynx: Сохранить изменения в boost_conv.ffs? - The "No" button was selected
+2020-06-30 21:05:09 2528     [INFO] Closing Schematic: boost_conv.ffs
+2020-06-30 21:05:11 2528     [INFO] Opening Project D:\git\dsi_controller\pcb_model\schematic_tests\dphy.ffs
+2020-06-30 21:05:15 2528     [INFO] Opened Schematic: D:\git\dsi_controller\pcb_model\schematic_tests\dphy.ffs
+2020-06-30 21:06:34 2528     [INFO] HyperLynx: Сохранить изменения в dphy.ffs? - The "No" button was selected
+2020-06-30 21:06:36 2528     [INFO] Closing Schematic: dphy.ffs
+2020-06-30 21:11:01 2528     [INFO] Opening Project C:\mentorgraphics\HLVX.2.6\SDD_HOME\hyperlynx64\HypFiles\ddr_4dimm_data_min.ffs
