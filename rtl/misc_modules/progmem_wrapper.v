@@ -17,12 +17,12 @@ assign ctrl_response = 0;
 
 reg r_ctrl_waitrequest;
 
-assign ctrl_waitrequest = r_ctrl_waitrequest;
+assign ctrl_waitrequest = ctrl_read && !r_ctrl_waitrequest;
 
 always @(posedge clk or negedge rst_n) begin
-    if(!rst_n)                                  r_ctrl_waitrequest <= 1'b1;
-    else if(ctrl_read)                          r_ctrl_waitrequest <= 1'b0;
-    else if(ctrl_read || r_ctrl_waitrequest)    r_ctrl_waitrequest <= 1'b1;
+    if(!rst_n)                                  r_ctrl_waitrequest <= 1'b0;
+    else if(ctrl_read)                          r_ctrl_waitrequest <= 1'b1;
+    else if(r_ctrl_waitrequest)                 r_ctrl_waitrequest <= 1'b0;
 end
 
 prgr_rom prgr_rom_0 (

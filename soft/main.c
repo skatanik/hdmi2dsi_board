@@ -30,12 +30,16 @@
 
 int main(void)
 {
+    volatile int a = 0x7658;
 //	volatile int i = 0;
 //	for(int k = 0; k < 10; k++)
 //		i++;
 //  printf("Hello RISC-V World!" "\n");
-	// *((volatile uint32_t*)OUTPORT) = (uint32_t) 0xffff;
-	// *((volatile uint32_t*)OUTPORT) = (uint32_t) 0xffff;
+	*((volatile uint32_t*)OUTPORT) = (uint32_t) 0x1234;
+    // a = 12;
+	*((volatile uint32_t*)OUTPORT) = (uint32_t) 0x5678;
+    // a = 234;
+    *((volatile uint32_t*)OUTPORT) = (uint32_t) a;
 	// *((volatile uint32_t*)OUTPORT) = (uint32_t) 0xffff;
   return 0;
 }

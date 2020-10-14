@@ -82,7 +82,7 @@ end_init_bss:
 
 # Update LEDs
 li a0, 0x02000000
-li a1, 0xfffe
+li a1, 0xf
 sw a1, 0(a0)
 
 # call main

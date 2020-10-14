@@ -7,7 +7,7 @@ RISCV32-OBJCOPY=$(F32C-COMPILER-PATH)/riscv32-unknown-elf-objcopy
 prgr_rom.mif:
 
 firmware.elf: sections.lds start.s ./../main.c
-	$(RISCV32-GCC) -march=rv32i -mabi=ilp32 -Wl,-Bstatic,-T,sections.lds,--strip-debug -ffreestanding -nostdlib -o firmware.elf start.s ./../main.c
+	$(RISCV32-GCC) -march=rv32i -mabi=ilp32 -Wl,-Bstatic,-T,sections.lds,--strip-debug -ffreestanding -nostdlib -O1 -o firmware.elf start.s ./../main.c
 
 firmware.bin: firmware.elf
 	$(RISCV32-OBJCOPY) -O binary firmware.elf /dev/stdout > firmware.bin
