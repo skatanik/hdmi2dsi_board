@@ -68,6 +68,8 @@ reg           r_mst_axi_arvalid;
 
 reg [32-1:0]  r_mst_axi_rdata;
 
+reg slv_bus_waitrequest_del;
+
 assign mst_axi_awid         = 4'h0;
 assign mst_axi_awlen        = 8'h00;
 assign mst_axi_awsize       = 3'b010;
@@ -86,7 +88,7 @@ assign mst_axi_araddr       = r_mst_axi_araddr;
 assign mst_axi_arvalid      = r_mst_axi_arvalid;
 assign slv_bus_readdata     = r_mst_axi_rdata;
 
-assign slv_bus_waitrequest  = slv_bus_write && !mst_axi_bvalid || slv_bus_read && !mst_axi_rvalid;
+assign slv_bus_waitrequest  = slv_bus_write && !mst_axi_bvalid || slv_bus_read && slv_bus_waitrequest_del;
 
 assign mst_axi_arid         = 4'h0;
 assign mst_axi_arlen        = 8'h00;
@@ -102,6 +104,11 @@ assign mst_axi_rready = 1'b1;
 assign mst_axi_wdata = r_mst_axi_wdata;
 assign mst_axi_wstrb = r_mst_axi_wstrb;
 assign mst_axi_wvalid = r_mst_axi_wvalid;
+
+always @(posedge clk or negedge rst_n) begin
+    if(!rst_n)              slv_bus_waitrequest_del <= 1'b0;
+    else                    slv_bus_waitrequest_del <= !mst_axi_rvalid;
+end
 
 always @(posedge clk or negedge rst_n) begin
     if(!rst_n)              r_mst_axi_awaddr <= 32'b0;
@@ -148,7 +155,7 @@ reg r_arvalid_en;
 always @(posedge clk or negedge rst_n) begin
     if(!rst_n)                                      r_arvalid_en <= 1'b0;
     else if(slv_bus_read && !r_arvalid_en)          r_arvalid_en <= 1'b1;
-    else if(r_arvalid_en && mst_axi_arready)        r_arvalid_en <= 1'b0;
+    else if(r_arvalid_en && mst_axi_rvalid)         r_arvalid_en <= 1'b0;
 end
 
 always @(posedge clk or negedge rst_n) begin
