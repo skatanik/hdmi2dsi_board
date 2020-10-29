@@ -600,6 +600,222 @@ core_axi_bridge core_axi_bridge_0(
 
 assign mst_core_axi_wid = 'b0;
 
+parameter SLAVE_NAME_PIX_READ = "SLAVE_NAME_PIX_READ";
+parameter SLAVE_NAME_PIX_WRITE = "SLAVE_NAME_PIX_WRITE";
+parameter SLAVE_NAME_RAM = "SLAVE_NAME_RAM";
+parameter DATA_BUS_WIDTH = 32;
+parameter ADDRESS_BUS_WIDTH = 32;
+parameter ID_BUS_WIDTH = 4;
+parameter AWUSER_BUS_WIDTH = 1;
+parameter ARUSER_BUS_WIDTH = 1;
+parameter RUSER_BUS_WIDTH  = 1;
+parameter WUSER_BUS_WIDTH  = 1;
+parameter BUSER_BUS_WIDTH  = 1;
+parameter SLAVE_ADDRESS = 0;
+parameter SLAVE_MEM_SIZE = 4;
+parameter MAX_OUTSTANDING_TRANSACTIONS = 8;
+parameter MEMORY_MODEL_MODE = 0;
+parameter EXCLUSIVE_ACCESS_SUPPORTED = 1;
+
+ cdn_axi4_slave_bfm #(SLAVE_NAME_RAM,
+                        DATA_BUS_WIDTH,
+                        ADDRESS_BUS_WIDTH,
+                        ID_BUS_WIDTH,
+                        AWUSER_BUS_WIDTH,
+                        ARUSER_BUS_WIDTH,
+                        RUSER_BUS_WIDTH,
+                        WUSER_BUS_WIDTH,
+                        BUSER_BUS_WIDTH,
+                        SLAVE_ADDRESS,
+                        SLAVE_MEM_SIZE,
+                        MAX_OUTSTANDING_TRANSACTIONS,
+                        MEMORY_MODEL_MODE,
+                        EXCLUSIVE_ACCESS_SUPPORTED)
+   slave_ram(.ACLK    (tb_ACLK),
+           .ARESETn (tb_ARESETn),
+           // Write Address Channel
+           .AWID    (master_0.AWID),
+           .AWADDR  (master_0.AWADDR),
+           .AWLEN   (master_0.AWLEN),
+           .AWSIZE  (master_0.AWSIZE),
+           .AWBURST (master_0.AWBURST),
+           .AWLOCK  (master_0.AWLOCK),
+           .AWCACHE (master_0.AWCACHE),
+           .AWPROT  (master_0.AWPROT),
+           .AWREGION(master_0.AWREGION),
+           .AWQOS   (master_0.AWQOS),
+           .AWUSER  (master_0.AWUSER),
+           .AWVALID (master_0.AWVALID),
+           .AWREADY (master_0.AWREADY),
+           // Write Data Channel Signals.
+           .WDATA  (master_0.WDATA),
+           .WSTRB  (master_0.WSTRB),
+           .WLAST  (master_0.WLAST),
+           .WUSER  (master_0.WUSER),
+           .WVALID (master_0.WVALID),
+           .WREADY (master_0.WREADY),
+           // Write Response Channel Signals.
+           .BID    (master_0.BID),
+           .BRESP  (master_0.BRESP),
+           .BUSER  (master_0.BUSER),
+           .BVALID (master_0.BVALID),
+           .BREADY (master_0.BREADY),
+           // Read Address Channel Signals.
+           .ARID    (master_0.ARID),
+           .ARADDR  (master_0.ARADDR),
+           .ARLEN   (master_0.ARLEN),
+           .ARSIZE  (master_0.ARSIZE),
+           .ARBURST (master_0.ARBURST),
+           .ARLOCK  (master_0.ARLOCK),
+           .ARCACHE (master_0.ARCACHE),
+           .ARPROT  (master_0.ARPROT),
+           .ARREGION(master_0.ARREGION),
+           .ARQOS   (master_0.ARQOS),
+           .ARUSER  (master_0.ARUSER),
+           .ARVALID (master_0.ARVALID),
+           .ARREADY (master_0.ARREADY),
+           // Read Data Channel Signals.
+           .RID    (master_0.RID),
+           .RDATA  (master_0.RDATA),
+           .RRESP  (master_0.RRESP),
+           .RLAST  (master_0.RLAST),
+           .RUSER  (master_0.RUSER),
+           .RVALID (master_0.RVALID),
+           .RREADY (master_0.RREADY));
+
+cdn_axi4_slave_bfm #(SLAVE_NAME_PIX_WRITE,
+                        DATA_BUS_WIDTH,
+                        ADDRESS_BUS_WIDTH,
+                        ID_BUS_WIDTH,
+                        AWUSER_BUS_WIDTH,
+                        ARUSER_BUS_WIDTH,
+                        RUSER_BUS_WIDTH,
+                        WUSER_BUS_WIDTH,
+                        BUSER_BUS_WIDTH,
+                        SLAVE_ADDRESS,
+                        SLAVE_MEM_SIZE,
+                        MAX_OUTSTANDING_TRANSACTIONS,
+                        MEMORY_MODEL_MODE,
+                        EXCLUSIVE_ACCESS_SUPPORTED)
+   slave_pix_write(.ACLK    (tb_ACLK),
+           .ARESETn (tb_ARESETn),
+           // Write Address Channel
+           .AWID    (master_0.AWID),
+           .AWADDR  (master_0.AWADDR),
+           .AWLEN   (master_0.AWLEN),
+           .AWSIZE  (master_0.AWSIZE),
+           .AWBURST (master_0.AWBURST),
+           .AWLOCK  (master_0.AWLOCK),
+           .AWCACHE (master_0.AWCACHE),
+           .AWPROT  (master_0.AWPROT),
+           .AWREGION(master_0.AWREGION),
+           .AWQOS   (master_0.AWQOS),
+           .AWUSER  (master_0.AWUSER),
+           .AWVALID (master_0.AWVALID),
+           .AWREADY (master_0.AWREADY),
+           // Write Data Channel Signals.
+           .WDATA  (master_0.WDATA),
+           .WSTRB  (master_0.WSTRB),
+           .WLAST  (master_0.WLAST),
+           .WUSER  (master_0.WUSER),
+           .WVALID (master_0.WVALID),
+           .WREADY (master_0.WREADY),
+           // Write Response Channel Signals.
+           .BID    (master_0.BID),
+           .BRESP  (master_0.BRESP),
+           .BUSER  (master_0.BUSER),
+           .BVALID (master_0.BVALID),
+           .BREADY (master_0.BREADY),
+           // Read Address Channel Signals.
+           .ARID    (master_0.ARID),
+           .ARADDR  (master_0.ARADDR),
+           .ARLEN   (master_0.ARLEN),
+           .ARSIZE  (master_0.ARSIZE),
+           .ARBURST (master_0.ARBURST),
+           .ARLOCK  (master_0.ARLOCK),
+           .ARCACHE (master_0.ARCACHE),
+           .ARPROT  (master_0.ARPROT),
+           .ARREGION(master_0.ARREGION),
+           .ARQOS   (master_0.ARQOS),
+           .ARUSER  (master_0.ARUSER),
+           .ARVALID (master_0.ARVALID),
+           .ARREADY (master_0.ARREADY),
+           // Read Data Channel Signals.
+           .RID    (master_0.RID),
+           .RDATA  (master_0.RDATA),
+           .RRESP  (master_0.RRESP),
+           .RLAST  (master_0.RLAST),
+           .RUSER  (master_0.RUSER),
+           .RVALID (master_0.RVALID),
+           .RREADY (master_0.RREADY));
+
+cdn_axi4_slave_bfm #(SLAVE_NAME_PIX_READ,
+                        DATA_BUS_WIDTH,
+                        ADDRESS_BUS_WIDTH,
+                        ID_BUS_WIDTH,
+                        AWUSER_BUS_WIDTH,
+                        ARUSER_BUS_WIDTH,
+                        RUSER_BUS_WIDTH,
+                        WUSER_BUS_WIDTH,
+                        BUSER_BUS_WIDTH,
+                        SLAVE_ADDRESS,
+                        SLAVE_MEM_SIZE,
+                        MAX_OUTSTANDING_TRANSACTIONS,
+                        MEMORY_MODEL_MODE,
+                        EXCLUSIVE_ACCESS_SUPPORTED)
+   slave_pix_read(
+        .ACLK    (tb_ACLK),
+        .ARESETn (tb_ARESETn),
+        // Write Address Channel
+        .AWID    (master_0.AWID),
+        .AWADDR  (master_0.AWADDR),
+        .AWLEN   (master_0.AWLEN),
+        .AWSIZE  (master_0.AWSIZE),
+        .AWBURST (master_0.AWBURST),
+        .AWLOCK  (master_0.AWLOCK),
+        .AWCACHE (master_0.AWCACHE),
+        .AWPROT  (master_0.AWPROT),
+        .AWREGION(master_0.AWREGION),
+        .AWQOS   (master_0.AWQOS),
+        .AWUSER  (master_0.AWUSER),
+        .AWVALID (master_0.AWVALID),
+        .AWREADY (master_0.AWREADY),
+        // Write Data Channel Signals.
+        .WDATA  (master_0.WDATA),
+        .WSTRB  (master_0.WSTRB),
+        .WLAST  (master_0.WLAST),
+        .WUSER  (master_0.WUSER),
+        .WVALID (master_0.WVALID),
+        .WREADY (master_0.WREADY),
+        // Write Response Channel Signals.
+        .BID    (master_0.BID),
+        .BRESP  (master_0.BRESP),
+        .BUSER  (master_0.BUSER),
+        .BVALID (master_0.BVALID),
+        .BREADY (master_0.BREADY),
+        // Read Address Channel Signals.
+        .ARID    (master_0.ARID),
+        .ARADDR  (master_0.ARADDR),
+        .ARLEN   (master_0.ARLEN),
+        .ARSIZE  (master_0.ARSIZE),
+        .ARBURST (master_0.ARBURST),
+        .ARLOCK  (master_0.ARLOCK),
+        .ARCACHE (master_0.ARCACHE),
+        .ARPROT  (master_0.ARPROT),
+        .ARREGION(master_0.ARREGION),
+        .ARQOS   (master_0.ARQOS),
+        .ARUSER  (master_0.ARUSER),
+        .ARVALID (master_0.ARVALID),
+        .ARREADY (master_0.ARREADY),
+        // Read Data Channel Signals.
+        .RID    (master_0.RID),
+        .RDATA  (master_0.RDATA),
+        .RRESP  (master_0.RRESP),
+        .RLAST  (master_0.RLAST),
+        .RUSER  (master_0.RUSER),
+        .RVALID (master_0.RVALID),
+        .RREADY (master_0.RREADY));
+
 `else
 
 //* DDR3 controller

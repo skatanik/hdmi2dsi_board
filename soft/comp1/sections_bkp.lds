@@ -1,6 +1,7 @@
 MEMORY
 {
-    RAM (xrw)       : ORIGIN = 0x00000000, LENGTH = 0x008000 /* 32 KB */
+    FLASH (rx)      : ORIGIN = 0x01000000, LENGTH = 0x800 /* entire flash, 4 MiB */
+    RAM (xrw)       : ORIGIN = 0x00000000, LENGTH = 0x200
 }
 
 SECTIONS {
@@ -14,15 +15,16 @@ SECTIONS {
         *(.rodata*)        /* .rodata* sections (constants, strings, etc.) */
         *(.srodata)        /* .rodata sections (constants, strings, etc.) */
         *(.srodata*)       /* .rodata* sections (constants, strings, etc.) */
+        . = ALIGN(4);
         _etext = .;        /* define a global symbol at end of code */
         _sidata = _etext;  /* This is used by the startup in order to initialize the .data secion */
-    } >RAM
+    } >FLASH
 
 
     /* This is the initialized data section
     The program executes knowing that the data is in the RAM
-    but the loader puts the initial values in the ROM (inidata).
-    It is one task of the startup to copy the initial values from ROM to RAM. */
+    but the loader puts the initial values in the FLASH (inidata).
+    It is one task of the startup to copy the initial values from FLASH to RAM. */
     .data : AT ( _sidata )
     {
         . = ALIGN(4);

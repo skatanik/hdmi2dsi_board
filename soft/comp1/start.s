@@ -1,5 +1,9 @@
 .section .text
 
+.global _start
+_start:
+    j _entry
+
 start:
 
 # zero-initialize register file
