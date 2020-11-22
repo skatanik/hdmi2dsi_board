@@ -1,8 +1,8 @@
 .section .text
 
-.global _start
-_start:
-    j _entry
+#.global _start
+#_start:
+#    j _entry
 
 start:
 
@@ -40,19 +40,19 @@ addi x30, zero, 0
 addi x31, zero, 0
 
 # Update LEDs
-li a0, 0x02000000
+li a0, 0x10000000
 li a1, 54
 sw a1, 0(a0)
 
 # zero initialize entire scratchpad memory
-li a0, 0x00000000
-setmemloop:
-sw a0, 0(a0)
-addi a0, a0, 4
-blt a0, sp, setmemloop
+# li a0, 0x00000000
+# setmemloop:
+# sw a0, 0(a0)
+# addi a0, a0, 4
+# blt a0, sp, setmemloop
 
 # Update LEDs
-li a0, 0x02000000
+li a0, 0x10000000
 li a1, 3
 sw a1, 0(a0)
 
@@ -70,7 +70,7 @@ blt a1, a2, loop_init_data
 end_init_data:
 
 # Update LEDs
-li a0, 0x02000000
+li a0, 0x10000000
 li a1, 7
 sw a1, 0(a0)
 
@@ -85,7 +85,7 @@ blt a0, a1, loop_init_bss
 end_init_bss:
 
 # Update LEDs
-li a0, 0x02000000
+li a0, 0x10000000
 li a1, 0xf
 sw a1, 0(a0)
 

@@ -71,17 +71,17 @@ avalon_mm_manager  #(
     .rst_n                   (rst_n                         ),
 
     /********* Avalon MM Slave iface *********/
-    .avl_mm_addr             (avl_mm_addr                   ),
+    .avl_mm_addr             (ctrl_address                  ),
 
-    .avl_mm_read             (avl_mm_read                   ),
-    .avl_mm_readdata         (avl_mm_readdata               ),
-    .avl_mm_response         (avl_mm_response               ),
+    .avl_mm_read             (ctrl_read                     ),
+    .avl_mm_readdata         (ctrl_readdata                 ),
+    .avl_mm_response         (ctrl_response                 ),
 
-    .avl_mm_write            (avl_mm_write                  ),
-    .avl_mm_writedata        (avl_mm_writedata              ),
-    .avl_mm_byteenable       (avl_mm_byteenable             ),
+    .avl_mm_write            (ctrl_write                    ),
+    .avl_mm_writedata        (ctrl_writedata                ),
+    .avl_mm_byteenable       (ctrl_byteenable               ),
 
-    .avl_mm_waitrequest      (avl_mm_waitrequest            ),
+    .avl_mm_waitrequest      (ctrl_waitrequest              ),
 
     /********* sys iface *********/
     .sys_read_req            (sys_read_req                  ),
@@ -138,12 +138,14 @@ assign mst_axi_arlock       = 2'b00;
 assign mst_axi_arcache      = 4'b0000;
 assign mst_axi_arprot       = 3'b000;
 assign mst_axi_arqos        = 4'b000;
+assign mst_axi_arvalid      = r_mst_axi_arvalid;
 assign st_data              = mst_axi_rdata;
 assign st_valid             = mst_axi_rvalid;
 assign mst_axi_rready       = st_ready;
 assign st_endofpacket       = r_st_endofpacket;
 assign st_startofpacket     = r_st_startofpacket;
 assign transfers_number     = words_number >> $clog2(BURST_SIZE);
+assign mst_axi_araddr       = curr_addr;
 
 assign rqst_enable              = !request_counter[MAX_PENDING_RQST_LOG];
 assign request_counter_empty    = (request_counter == 0);

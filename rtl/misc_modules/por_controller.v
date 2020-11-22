@@ -62,11 +62,11 @@ always @(posedge clk_input) begin
 
 end
 
-reg [INP_RESYNC_SIZE-1:0] rst_1_resync;
-reg [INP_RESYNC_SIZE-1:0] rst_2_resync;
-reg [INP_RESYNC_SIZE-1:0] rst_3_resync;
-reg [INP_RESYNC_SIZE-1:0] rst_4_resync;
-reg [INP_RESYNC_SIZE-1:0] rst_5_resync;
+reg [INP_RESYNC_SIZE-1:0] rst_1_resync = 'b0;
+reg [INP_RESYNC_SIZE-1:0] rst_2_resync = 'b0;
+reg [INP_RESYNC_SIZE-1:0] rst_3_resync = 'b0;
+reg [INP_RESYNC_SIZE-1:0] rst_4_resync = 'b0;
+reg [INP_RESYNC_SIZE-1:0] rst_5_resync = 'b0;
 
 always @(posedge clk_1_in)
 begin

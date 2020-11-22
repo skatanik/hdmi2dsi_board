@@ -12,6 +12,7 @@
 
 #define OUTPORT 0x10000000
 #define WRITE_REG(x,y)          *((volatile uint32_t*)x) = (uint32_t)y
+#define READ_REG(x,y)           y = (uint32_t)*((volatile uint32_t*)x)
 /*
  * Demonstrate how to print a greeting message on standard output
  * and exit.
@@ -34,9 +35,21 @@ int main(void)
     // volatile int a = 0x7658;
 	// volatile int i = 0;
 
+    volatile uint32_t y;
+
     // printf("Hello RISC-V World!" "\n");
 
     WRITE_REG(OUTPORT, 0x1234);
+
+    WRITE_REG(OUTPORT, 0x5678);
+
+    WRITE_REG(OUTPORT, 0xffff);
+
+    WRITE_REG(0x00005000, 0x64337d);
+
+    READ_REG(0x00005000, y);
+
+    WRITE_REG(OUTPORT, y);
 
     // *((volatile uint32_t*)OUTPORT) = (uint32_t) 0x1234;
     // // a = 12;

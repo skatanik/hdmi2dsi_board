@@ -199,6 +199,28 @@ wire                               pix_axi_rlast;
 wire                               pix_axi_rvalid;
 wire                               pix_axi_rready;
 
+wire [4 - 1:0]	                    hdmi_axi_awid;
+wire [32 - 1:0]	                    hdmi_axi_awaddr;
+wire [7:0]	                        hdmi_axi_awlen;
+wire [2:0]	                        hdmi_axi_awsize;
+wire [1:0]	                        hdmi_axi_awburst;
+wire [0:0]	                        hdmi_axi_awlock;
+wire [3:0]	                        hdmi_axi_awcache;
+wire [2:0]	                        hdmi_axi_awprot;
+wire [3:0]	                        hdmi_axi_awqos;
+wire   	                            hdmi_axi_awvalid;
+wire   	                            hdmi_axi_awready;
+wire [32 - 1:0]                     hdmi_axi_wdata;
+wire [32/8 - 1:0]                   hdmi_axi_wstrb;
+wire                                hdmi_axi_wlast;
+wire                                hdmi_axi_wvalid;
+wire  	                            hdmi_axi_wready;
+wire [4 - 1:0]                      hdmi_axi_bid;
+wire [4 - 1:0]                      hdmi_axi_wid;
+wire [1:0]                          hdmi_axi_bresp;
+wire                                hdmi_axi_bvalid;
+wire                                hdmi_axi_bready;
+
 wire    [32 - 1:0]                  s0_bus_addr;
 wire                                s0_bus_read;
 wire    [32-1:0]                    s0_bus_readdata;
@@ -264,13 +286,16 @@ wire          i2c_2_irq;
 assign  irq_vec = 32'b0;
 
 //* Reset Controller
-
+`ifdef SPARTAN7
+assign hdmi_clk_buf = hdmi_clk;
+`else
 IBUFG #(
       .IOSTANDARD("DEFAULT")
 ) IBUFG_hdmi_clk (
       .O(hdmi_clk_buf), // Clock buffer output
       .I(hdmi_clk)  // Clock buffer input (connect directly to top-level port)
    );
+`endif
 
  por_controller#(
     .INP_RESYNC_SIZE(128)
@@ -333,22 +358,22 @@ Memory Map
 BASE ADDR           MASK          SIZE         COMMENT
 ------------------------------------------------------------
 0x0000_0000     0xFFFC_0000       2^18          DDR
-0x0100_0000     0xFFFF_FC00       2^10          PROG_MEM
-0x0100_0400     0xFFFF_FF00       2^8           HDMI
-0x0100_0500     0xFFFF_FF00       2^8           PIX WRITE
-0x0100_0600     0xFFFF_FF00       2^8           PIX READER
-0x0100_0700     0xFFFF_FF00       2^8           DSI
-0x0100_0800     0xFFFF_FF00       2^8           USART
-0x0100_0900     0xFFFF_FF00       2^8           I2C HDMI
-0x0100_0A00     0xFFFF_FF00       2^8           I2C EEPROM
-0x0100_0B00     0xFFFF_FF00       2^8           GPIO
+0x0100_0000     0xFFFF_F000       2^12          PROG_MEM
+0x0100_1000     0xFFFF_FF00       2^8           HDMI
+0x0100_1100     0xFFFF_FF00       2^8           PIX WRITE
+0x0100_1200     0xFFFF_FF00       2^8           PIX READER
+0x0100_1300     0xFFFF_FF00       2^8           DSI
+0x0100_1400     0xFFFF_FF00       2^8           USART
+0x0100_1500     0xFFFF_FF00       2^8           I2C HDMI
+0x0100_1600     0xFFFF_FF00       2^8           I2C EEPROM
+0x0100_1700     0xFFFF_FF00       2^8           GPIO
 */
 
 parameter M0_ADDR_WIDTH = 18;//$clog2(!(32'hFFFC_0000));
 parameter M1_ADDR_WIDTH = 8;//$clog2(!(32'hFFFF_FF00));
 parameter M2_ADDR_WIDTH = 8;//$clog2(!(32'hFFFF_FF00));
 parameter M3_ADDR_WIDTH = 8;//$clog2(!(32'hFFFF_FF00));
-parameter M4_ADDR_WIDTH = 10;//$clog2(!(32'hFFFF_FC00));
+parameter M4_ADDR_WIDTH = 12;//$clog2(!(32'hFFFF_FC00));
 parameter M5_ADDR_WIDTH = 8;//$clog2(!(32'hFFFF_FF00));
 parameter M6_ADDR_WIDTH = 8;//$clog2(!(32'hFFFF_FF00));
 parameter M7_ADDR_WIDTH = 8;//$clog2(!(32'hFFFF_FF00));
@@ -364,34 +389,34 @@ wire [M5_ADDR_WIDTH-1:0]                         ctrl_uart_address;
 interconnect_mod #(
     .M0_BASE(32'h0000_0000),    //* DDR
     .M0_MASK(32'hFFFC_0000),    //* DDR
-    .M0_ADDR_W(18),
+    .M0_ADDR_W(M0_ADDR_WIDTH),
     .M1_BASE(32'hFFFF_FFFF),    //! TODO
     .M1_MASK(32'h0000_0000),    //! TODO
-    .M1_ADDR_W(8),
-    .M2_BASE(32'h0100_0600),    //* PIX READER
+    .M1_ADDR_W(M1_ADDR_WIDTH),
+    .M2_BASE(32'h0100_1200),    //* PIX READER
     .M2_MASK(32'hFFFF_FF00),    //* PIX READER
-    .M2_ADDR_W(8),
-    .M3_BASE(32'h0100_0700),    //* DSI
+    .M2_ADDR_W(M2_ADDR_WIDTH),
+    .M3_BASE(32'h0100_1300),    //* DSI
     .M3_MASK(32'hFFFF_FF00),    //* DSI
-    .M3_ADDR_W(8),
+    .M3_ADDR_W(M3_ADDR_WIDTH),
     .M4_BASE(32'h0100_0000),    //* PROG MEM
-    .M4_MASK(32'hFFFF_FC00),    //* PROG MEM
-    .M4_ADDR_W(10),
-    .M5_BASE(32'h0100_0800),    //* UART
+    .M4_MASK(32'hFFFF_F000),    //* PROG MEM
+    .M4_ADDR_W(M4_ADDR_WIDTH),
+    .M5_BASE(32'h0100_1400),    //* UART
     .M5_MASK(32'hFFFF_FF00),    //* UART
-    .M5_ADDR_W(8),
+    .M5_ADDR_W(M5_ADDR_WIDTH),
     .M6_BASE(32'hFFFF_FFFF),    //! TODO
     .M6_MASK(32'h0000_0000),    //! TODO
-    .M6_ADDR_W(8),
+    .M6_ADDR_W(M6_ADDR_WIDTH),
     .M7_BASE(32'hFFFF_FFFF),    //! TODO
     .M7_MASK(32'h0000_0000),    //! TODO
-    .M7_ADDR_W(8),
+    .M7_ADDR_W(M7_ADDR_WIDTH),
     .M8_BASE(32'hFFFF_FFFF),    //! TODO
     .M8_MASK(32'h0000_0000),    //! TODO
-    .M8_ADDR_W(8),
+    .M8_ADDR_W(M8_ADDR_WIDTH),
     .M9_BASE(32'hFFFF_FFFF),    //! TODO
     .M9_MASK(32'h0000_0000),    //! TODO
-    .M9_ADDR_W(8)
+    .M9_ADDR_W(M9_ADDR_WIDTH)
 )interconnect_mod_0(
     // Slave port 0
     .s0_bus_addr                (s0_bus_addr            ),
@@ -564,6 +589,9 @@ core_axi_bridge core_axi_bridge_0(
 );
 
 `ifdef SIMULATION
+
+`ifndef SPARTAN7
+
  ram_mem ram_mem_0(
   .s_aclk               (sys_clk                ),
   .s_aresetn            (sys_rst_n              ),
@@ -599,222 +627,129 @@ core_axi_bridge core_axi_bridge_0(
 );
 
 assign mst_core_axi_wid = 'b0;
+`else
 
-parameter SLAVE_NAME_PIX_READ = "SLAVE_NAME_PIX_READ";
-parameter SLAVE_NAME_PIX_WRITE = "SLAVE_NAME_PIX_WRITE";
-parameter SLAVE_NAME_RAM = "SLAVE_NAME_RAM";
-parameter DATA_BUS_WIDTH = 32;
-parameter ADDRESS_BUS_WIDTH = 32;
-parameter ID_BUS_WIDTH = 4;
-parameter AWUSER_BUS_WIDTH = 1;
-parameter ARUSER_BUS_WIDTH = 1;
-parameter RUSER_BUS_WIDTH  = 1;
-parameter WUSER_BUS_WIDTH  = 1;
-parameter BUSER_BUS_WIDTH  = 1;
-parameter SLAVE_ADDRESS = 0;
-parameter SLAVE_MEM_SIZE = 4;
-parameter MAX_OUTSTANDING_TRANSACTIONS = 8;
-parameter MEMORY_MODEL_MODE = 0;
-parameter EXCLUSIVE_ACCESS_SUPPORTED = 1;
+ axi4_slave_vip  slave_ram(
+            .aclk               (sys_clk                ),
+            .aresetn            (sys_rst_n              ),
+            .s_axi_awaddr       (mst_core_axi_awaddr    ),
+            .s_axi_awlen        (mst_core_axi_awlen     ),
+            .s_axi_awsize       (mst_core_axi_awsize    ),
+            .s_axi_awburst      (mst_core_axi_awburst   ),
+            .s_axi_awlock       (mst_core_axi_awlock    ),
+            .s_axi_awcache      (mst_core_axi_awcache   ),
+            .s_axi_awprot       (mst_core_axi_awprot    ),
+            .s_axi_awregion     (0),
+            .s_axi_awqos        (mst_core_axi_awqos     ),
+            .s_axi_awvalid      (mst_core_axi_awvalid   ),
+            .s_axi_awready      (mst_core_axi_awready   ),
+            .s_axi_wdata        (mst_core_axi_wdata     ),
+            .s_axi_wstrb        (mst_core_axi_wstrb     ),
+            .s_axi_wlast        (mst_core_axi_wlast     ),
+            .s_axi_wvalid       (mst_core_axi_wvalid    ),
+            .s_axi_wready       (mst_core_axi_wready    ),
+            .s_axi_bresp        (mst_core_axi_bresp     ),
+            .s_axi_bvalid       (mst_core_axi_bvalid    ),
+            .s_axi_bready       (mst_core_axi_bready    ),
+            .s_axi_araddr       (mst_core_axi_araddr    ),
+            .s_axi_arlen        (mst_core_axi_arlen     ),
+            .s_axi_arsize       (mst_core_axi_arsize    ),
+            .s_axi_arburst      (mst_core_axi_arburst   ),
+            .s_axi_arlock       (mst_core_axi_arlock    ),
+            .s_axi_arcache      (mst_core_axi_arcache   ),
+            .s_axi_arprot       (mst_core_axi_arprot    ),
+            .s_axi_arregion     (0),
+            .s_axi_arqos        (mst_core_axi_arqos     ),
+            .s_axi_arvalid      (mst_core_axi_arvalid   ),
+            .s_axi_arready      (mst_core_axi_arready   ),
+            .s_axi_rdata        (mst_core_axi_rdata     ),
+            .s_axi_rresp        (mst_core_axi_rresp     ),
+            .s_axi_rlast        (mst_core_axi_rlast     ),
+            .s_axi_rvalid       (mst_core_axi_rvalid    ),
+            .s_axi_rready       (mst_core_axi_rready    )
+            );
 
- cdn_axi4_slave_bfm #(SLAVE_NAME_RAM,
-                        DATA_BUS_WIDTH,
-                        ADDRESS_BUS_WIDTH,
-                        ID_BUS_WIDTH,
-                        AWUSER_BUS_WIDTH,
-                        ARUSER_BUS_WIDTH,
-                        RUSER_BUS_WIDTH,
-                        WUSER_BUS_WIDTH,
-                        BUSER_BUS_WIDTH,
-                        SLAVE_ADDRESS,
-                        SLAVE_MEM_SIZE,
-                        MAX_OUTSTANDING_TRANSACTIONS,
-                        MEMORY_MODEL_MODE,
-                        EXCLUSIVE_ACCESS_SUPPORTED)
-   slave_ram(.ACLK    (tb_ACLK),
-           .ARESETn (tb_ARESETn),
-           // Write Address Channel
-           .AWID    (master_0.AWID),
-           .AWADDR  (master_0.AWADDR),
-           .AWLEN   (master_0.AWLEN),
-           .AWSIZE  (master_0.AWSIZE),
-           .AWBURST (master_0.AWBURST),
-           .AWLOCK  (master_0.AWLOCK),
-           .AWCACHE (master_0.AWCACHE),
-           .AWPROT  (master_0.AWPROT),
-           .AWREGION(master_0.AWREGION),
-           .AWQOS   (master_0.AWQOS),
-           .AWUSER  (master_0.AWUSER),
-           .AWVALID (master_0.AWVALID),
-           .AWREADY (master_0.AWREADY),
-           // Write Data Channel Signals.
-           .WDATA  (master_0.WDATA),
-           .WSTRB  (master_0.WSTRB),
-           .WLAST  (master_0.WLAST),
-           .WUSER  (master_0.WUSER),
-           .WVALID (master_0.WVALID),
-           .WREADY (master_0.WREADY),
-           // Write Response Channel Signals.
-           .BID    (master_0.BID),
-           .BRESP  (master_0.BRESP),
-           .BUSER  (master_0.BUSER),
-           .BVALID (master_0.BVALID),
-           .BREADY (master_0.BREADY),
-           // Read Address Channel Signals.
-           .ARID    (master_0.ARID),
-           .ARADDR  (master_0.ARADDR),
-           .ARLEN   (master_0.ARLEN),
-           .ARSIZE  (master_0.ARSIZE),
-           .ARBURST (master_0.ARBURST),
-           .ARLOCK  (master_0.ARLOCK),
-           .ARCACHE (master_0.ARCACHE),
-           .ARPROT  (master_0.ARPROT),
-           .ARREGION(master_0.ARREGION),
-           .ARQOS   (master_0.ARQOS),
-           .ARUSER  (master_0.ARUSER),
-           .ARVALID (master_0.ARVALID),
-           .ARREADY (master_0.ARREADY),
-           // Read Data Channel Signals.
-           .RID    (master_0.RID),
-           .RDATA  (master_0.RDATA),
-           .RRESP  (master_0.RRESP),
-           .RLAST  (master_0.RLAST),
-           .RUSER  (master_0.RUSER),
-           .RVALID (master_0.RVALID),
-           .RREADY (master_0.RREADY));
+axi4_slave_vip  slave_wo(
+            .aclk               (sys_clk                ),
+            .aresetn            (sys_rst_n              ),
+            .s_axi_awaddr       (hdmi_axi_awaddr        ),
+            .s_axi_awlen        (hdmi_axi_awlen         ),
+            .s_axi_awsize       (hdmi_axi_awsize        ),
+            .s_axi_awburst      (hdmi_axi_awburst       ),
+            .s_axi_awlock       (hdmi_axi_awlock        ),
+            .s_axi_awcache      (hdmi_axi_awcache       ),
+            .s_axi_awprot       (hdmi_axi_awprot        ),
+            .s_axi_awregion     (0),
+            .s_axi_awqos        (hdmi_axi_awqos         ),
+            .s_axi_awvalid      (hdmi_axi_awvalid       ),
+            .s_axi_awready      (hdmi_axi_awready       ),
+            .s_axi_wdata        (hdmi_axi_wdata         ),
+            .s_axi_wstrb        (hdmi_axi_wstrb         ),
+            .s_axi_wlast        (hdmi_axi_wlast         ),
+            .s_axi_wvalid       (hdmi_axi_wvalid        ),
+            .s_axi_wready       (hdmi_axi_wready        ),
+            .s_axi_bresp        (hdmi_axi_bresp         ),
+            .s_axi_bvalid       (hdmi_axi_bvalid        ),
+            .s_axi_bready       (hdmi_axi_bready        ),
+            .s_axi_araddr       (0  ),
+            .s_axi_arlen        (0  ),
+            .s_axi_arsize       (0  ),
+            .s_axi_arburst      (0  ),
+            .s_axi_arlock       (0  ),
+            .s_axi_arcache      (0  ),
+            .s_axi_arprot       (0  ),
+            .s_axi_arregion     (0),
+            .s_axi_arqos        (0   ),
+            .s_axi_arvalid      (0   ),
+            .s_axi_arready      (   ),
+            .s_axi_rdata        (     ),
+            .s_axi_rresp        (     ),
+            .s_axi_rlast        (     ),
+            .s_axi_rvalid       (    ),
+            .s_axi_rready       (1    )
+            );
 
-cdn_axi4_slave_bfm #(SLAVE_NAME_PIX_WRITE,
-                        DATA_BUS_WIDTH,
-                        ADDRESS_BUS_WIDTH,
-                        ID_BUS_WIDTH,
-                        AWUSER_BUS_WIDTH,
-                        ARUSER_BUS_WIDTH,
-                        RUSER_BUS_WIDTH,
-                        WUSER_BUS_WIDTH,
-                        BUSER_BUS_WIDTH,
-                        SLAVE_ADDRESS,
-                        SLAVE_MEM_SIZE,
-                        MAX_OUTSTANDING_TRANSACTIONS,
-                        MEMORY_MODEL_MODE,
-                        EXCLUSIVE_ACCESS_SUPPORTED)
-   slave_pix_write(.ACLK    (tb_ACLK),
-           .ARESETn (tb_ARESETn),
-           // Write Address Channel
-           .AWID    (master_0.AWID),
-           .AWADDR  (master_0.AWADDR),
-           .AWLEN   (master_0.AWLEN),
-           .AWSIZE  (master_0.AWSIZE),
-           .AWBURST (master_0.AWBURST),
-           .AWLOCK  (master_0.AWLOCK),
-           .AWCACHE (master_0.AWCACHE),
-           .AWPROT  (master_0.AWPROT),
-           .AWREGION(master_0.AWREGION),
-           .AWQOS   (master_0.AWQOS),
-           .AWUSER  (master_0.AWUSER),
-           .AWVALID (master_0.AWVALID),
-           .AWREADY (master_0.AWREADY),
-           // Write Data Channel Signals.
-           .WDATA  (master_0.WDATA),
-           .WSTRB  (master_0.WSTRB),
-           .WLAST  (master_0.WLAST),
-           .WUSER  (master_0.WUSER),
-           .WVALID (master_0.WVALID),
-           .WREADY (master_0.WREADY),
-           // Write Response Channel Signals.
-           .BID    (master_0.BID),
-           .BRESP  (master_0.BRESP),
-           .BUSER  (master_0.BUSER),
-           .BVALID (master_0.BVALID),
-           .BREADY (master_0.BREADY),
-           // Read Address Channel Signals.
-           .ARID    (master_0.ARID),
-           .ARADDR  (master_0.ARADDR),
-           .ARLEN   (master_0.ARLEN),
-           .ARSIZE  (master_0.ARSIZE),
-           .ARBURST (master_0.ARBURST),
-           .ARLOCK  (master_0.ARLOCK),
-           .ARCACHE (master_0.ARCACHE),
-           .ARPROT  (master_0.ARPROT),
-           .ARREGION(master_0.ARREGION),
-           .ARQOS   (master_0.ARQOS),
-           .ARUSER  (master_0.ARUSER),
-           .ARVALID (master_0.ARVALID),
-           .ARREADY (master_0.ARREADY),
-           // Read Data Channel Signals.
-           .RID    (master_0.RID),
-           .RDATA  (master_0.RDATA),
-           .RRESP  (master_0.RRESP),
-           .RLAST  (master_0.RLAST),
-           .RUSER  (master_0.RUSER),
-           .RVALID (master_0.RVALID),
-           .RREADY (master_0.RREADY));
+axi4_slave_vip  slave_ro(
+            .aclk               (sys_clk                ),
+            .aresetn            (sys_rst_n              ),
+            .s_axi_awaddr       (0   ),
+            .s_axi_awlen        (0   ),
+            .s_axi_awsize       (0   ),
+            .s_axi_awburst      (0   ),
+            .s_axi_awlock       (0   ),
+            .s_axi_awcache      (0   ),
+            .s_axi_awprot       (0   ),
+            .s_axi_awregion     (0),
+            .s_axi_awqos        (0     ),
+            .s_axi_awvalid      (0   ),
+            .s_axi_awready      (   ),
+            .s_axi_wdata        (0    ),
+            .s_axi_wstrb        (0    ),
+            .s_axi_wlast        (0    ),
+            .s_axi_wvalid       (0    ),
+            .s_axi_wready       (    ),
+            .s_axi_bresp        (    ),
+            .s_axi_bvalid       (    ),
+            .s_axi_bready       (1    ),
+            .s_axi_araddr       ({8'b0,pix_axi_araddr}  ),
+            .s_axi_arlen        (pix_axi_arlen          ),
+            .s_axi_arsize       (pix_axi_arsize         ),
+            .s_axi_arburst      (pix_axi_arburst        ),
+            .s_axi_arlock       (pix_axi_arlock         ),
+            .s_axi_arcache      (pix_axi_arcache        ),
+            .s_axi_arprot       (pix_axi_arprot         ),
+            .s_axi_arregion     (0),
+            .s_axi_arqos        (pix_axi_arqos          ),
+            .s_axi_arvalid      (pix_axi_arvalid        ),
+            .s_axi_arready      (pix_axi_arready        ),
+            .s_axi_rdata        (pix_axi_rdata          ),
+            .s_axi_rresp        (pix_axi_rresp          ),
+            .s_axi_rlast        (pix_axi_rlast          ),
+            .s_axi_rvalid       (pix_axi_rvalid         ),
+            .s_axi_rready       (pix_axi_rready         )
+            );
 
-cdn_axi4_slave_bfm #(SLAVE_NAME_PIX_READ,
-                        DATA_BUS_WIDTH,
-                        ADDRESS_BUS_WIDTH,
-                        ID_BUS_WIDTH,
-                        AWUSER_BUS_WIDTH,
-                        ARUSER_BUS_WIDTH,
-                        RUSER_BUS_WIDTH,
-                        WUSER_BUS_WIDTH,
-                        BUSER_BUS_WIDTH,
-                        SLAVE_ADDRESS,
-                        SLAVE_MEM_SIZE,
-                        MAX_OUTSTANDING_TRANSACTIONS,
-                        MEMORY_MODEL_MODE,
-                        EXCLUSIVE_ACCESS_SUPPORTED)
-   slave_pix_read(
-        .ACLK    (tb_ACLK),
-        .ARESETn (tb_ARESETn),
-        // Write Address Channel
-        .AWID    (master_0.AWID),
-        .AWADDR  (master_0.AWADDR),
-        .AWLEN   (master_0.AWLEN),
-        .AWSIZE  (master_0.AWSIZE),
-        .AWBURST (master_0.AWBURST),
-        .AWLOCK  (master_0.AWLOCK),
-        .AWCACHE (master_0.AWCACHE),
-        .AWPROT  (master_0.AWPROT),
-        .AWREGION(master_0.AWREGION),
-        .AWQOS   (master_0.AWQOS),
-        .AWUSER  (master_0.AWUSER),
-        .AWVALID (master_0.AWVALID),
-        .AWREADY (master_0.AWREADY),
-        // Write Data Channel Signals.
-        .WDATA  (master_0.WDATA),
-        .WSTRB  (master_0.WSTRB),
-        .WLAST  (master_0.WLAST),
-        .WUSER  (master_0.WUSER),
-        .WVALID (master_0.WVALID),
-        .WREADY (master_0.WREADY),
-        // Write Response Channel Signals.
-        .BID    (master_0.BID),
-        .BRESP  (master_0.BRESP),
-        .BUSER  (master_0.BUSER),
-        .BVALID (master_0.BVALID),
-        .BREADY (master_0.BREADY),
-        // Read Address Channel Signals.
-        .ARID    (master_0.ARID),
-        .ARADDR  (master_0.ARADDR),
-        .ARLEN   (master_0.ARLEN),
-        .ARSIZE  (master_0.ARSIZE),
-        .ARBURST (master_0.ARBURST),
-        .ARLOCK  (master_0.ARLOCK),
-        .ARCACHE (master_0.ARCACHE),
-        .ARPROT  (master_0.ARPROT),
-        .ARREGION(master_0.ARREGION),
-        .ARQOS   (master_0.ARQOS),
-        .ARUSER  (master_0.ARUSER),
-        .ARVALID (master_0.ARVALID),
-        .ARREADY (master_0.ARREADY),
-        // Read Data Channel Signals.
-        .RID    (master_0.RID),
-        .RDATA  (master_0.RDATA),
-        .RRESP  (master_0.RRESP),
-        .RLAST  (master_0.RLAST),
-        .RUSER  (master_0.RUSER),
-        .RVALID (master_0.RVALID),
-        .RREADY (master_0.RREADY));
+`endif
 
 `else
 
@@ -1154,7 +1089,7 @@ progmem_wrapper progmem_wrapper_0(
     .rst_n                   (sys_rst_n            ),
 
     //* system interface
-    .ctrl_address            (ctrl_prog_mem_address       ),
+    .ctrl_address            (ctrl_prog_mem_address),
     .ctrl_read               (ctrl_prog_mem_read          ),
     .ctrl_readdata           (ctrl_prog_mem_readdata      ),
     .ctrl_response           (ctrl_prog_mem_response      ),
@@ -1175,6 +1110,20 @@ wire CLKOUT1; //* CLKOUT2 / 8
 wire CLKOUT2; //* 600 MHZ
 wire CLKOUT3; //* 600 MHZ
 wire CLKOUT4; //* 50 MHz input
+
+`ifdef SPARTAN7
+clk_wiz_0 main_pll(
+    .clk_out1   (sys_clk),
+    .clk_out2   (dsi_io_clk),
+    .clk_out3   (dsi_io_clk_clk),
+    .clk_out4   (dsi_phy_clk),
+    .reset      (),
+    .locked     (sys_pll_locked     ),
+    .clk_in1    (clk_in             )
+    );
+
+assign clk_pre_pll = clk_in;
+`else
 
 IBUFG #(
       .IOSTANDARD("DEFAULT")
@@ -1270,6 +1219,8 @@ BUFPLL #(
       .LOCKED(sys_pll_locked),             // 1-bit input: LOCKED input from PLL
       .PLLIN(CLKOUT2)                // 1-bit input: Clock input from PLL
    );
+
+`endif
 
 endmodule
 
