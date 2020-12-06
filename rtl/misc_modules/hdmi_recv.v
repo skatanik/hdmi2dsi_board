@@ -1,4 +1,8 @@
-module hdmi_recv(
+module hdmi_recv #(
+    parameter BURST_SIZE = 128,
+    parameter MAX_OUTSTANDING_TR = 16
+
+)(
     input   wire            hdmi_rst_n              ,
     input   wire            hdmi_clk                ,
 
@@ -7,15 +11,33 @@ module hdmi_recv(
     input   wire            hdmi_vs                 ,
     input   wire            hdmi_de                 ,
 
-    /********* ST output *********/
-    input   wire            rst_sys_n               ,
+    /********* AXI write channels *********/
     input   wire            clk_sys                 ,
+    input   wire            rst_sys_n               ,
 
-    output  wire [31:0]     st_data                 ,
-    output  wire            st_valid                ,
-    output  wire            st_endofpacket          ,
-    output  wire            st_startofpacket        ,
-    input   wire            st_ready                ,
+    output wire [4 - 1:0]   mst_axi_awid            ,
+    output wire [24 - 1:0]  mst_axi_awaddr          ,
+    output wire [7:0]       mst_axi_awlen           ,
+    output wire [2:0]       mst_axi_awsize          ,
+    output wire [1:0]       mst_axi_awburst         ,
+    output wire [0:0]       mst_axi_awlock          ,
+    output wire [3:0]       mst_axi_awcache         ,
+    output wire [2:0]       mst_axi_awprot          ,
+    output wire [3:0]       mst_axi_awqos           ,
+    output wire             mst_axi_awvalid         ,
+    input  wire             mst_axi_awready         ,
+
+    output wire [31:0]      mst_axi_wdata           ,
+    output wire [3:0]       mst_axi_wstrb           ,
+    output wire             mst_axi_wlast           ,
+    output wire             mst_axi_wvalid          ,
+    input  wire             mst_axi_wready          ,
+
+    output wire             mst_axi_bid             ,
+    output wire             mst_axi_wid             ,
+    input  wire [1:0]       mst_axi_bresp           ,
+    input  wire             mst_axi_bvalid          ,
+    output wire             mst_axi_bready          ,
 
     /********* MM iface *********/
     input   wire [4:0]      ctrl_address            ,
@@ -28,10 +50,23 @@ module hdmi_recv(
     output  wire            ctrl_waitrequest
 );
 
+assign mst_axi_awid     = 2'b00;
+assign mst_axi_awsize   = 3'b010;
+assign mst_axi_awburst  = 2'b01;
+assign mst_axi_awlock   = 2'b00;
+assign mst_axi_awcache  = 4'b0000;
+assign mst_axi_awprot   = 3'b000;
+assign mst_axi_awqos    = 4'b000;
+assign mst_axi_bready   = 1'b0;
+assign mst_axi_bid      = 0;
+assign mst_axi_wid      = 0;
 
-localparam REGISTERS_NUMBER     = 3;
+localparam REGISTERS_NUMBER     = 5;
 localparam CTRL_ADDR_WIDTH      = 4;
 localparam MEMORY_MAP           = {
+                                    4'h14,
+                                    4'h10,
+                                    4'h0C,
                                     4'h08,
                                     4'h04,
                                     4'h00
@@ -89,6 +124,9 @@ reg [ADDR_WIDTH-1:0] start_addr;
 reg [30-1:0] words_number;
 reg dma_enable;
 reg reg_fifo_full;
+reg [26-1:0] reg_pixel_number;
+reg [27-1:0] reg_words_number;
+reg [27-1:0] reg_words_cnt;
 
 always @(posedge clk_sys or negedge rst_sys_n) begin
     if(!rst_sys_n)              start_addr <= 'b0;
@@ -103,6 +141,16 @@ end
 always @(posedge clk_sys or negedge rst_sys_n) begin
     if(!rst_sys_n)              dma_enable <= 'b0;
     else if(sys_write_req[2])   dma_enable <= sys_write_data[0];
+end
+
+always @(posedge clk_sys or negedge rst_sys_n) begin
+    if(!rst_sys_n)              reg_pixel_number <= 'b0;
+    else if(sys_write_req[3])   reg_pixel_number <= sys_write_data[26-1:0];
+end
+
+always @(posedge clk_sys or negedge rst_sys_n) begin
+    if(!rst_sys_n)              reg_words_number <= 'b0;
+    else                        reg_words_number <= (reg_pixel_number*3) >> 2;
 end
 
 /* latching input data */
@@ -163,7 +211,9 @@ always @(posedge hdmi_clk or negedge hdmi_rst_n) begin
 end
 
 wire w_fifo_empty;
+wire w_fifo_full;
 wire [31:0] w_fifo_data_out;
+wire [9:0]  w_rd_data_count;
 
 reg [31:0] r_fifo_data_out;
 reg        r_data_out_valid;
@@ -176,23 +226,55 @@ hdmi_data_fifo hdmi_data_fifo_0(
     .wr_en              (fifo_write[2]                  ),
     .rd_en              (!w_fifo_empty && st_ready      ),
     .dout               (w_fifo_data_out                ),
-    .full               (),
+    .full               (w_fifo_full                    ),
     .empty              (w_fifo_empty                   ),
+    .rd_data_count      (w_rd_data_count                ),
     .wr_rst_busy        (),
     .rd_rst_busy        ()
    );
 
+localparam BW_TRANS_CNT = $clog2(MAX_OUTSTANDING_TR);
+localparam BW_BURST_CNT = $clog2(BURST_SIZE);
+
+reg                     r_mst_axi_awlen; //    = BURST_SIZE - 1;
+reg [24-1:0]            r_mst_axi_awaddr;
+reg                     r_mst_axi_awvalid;
+reg [BW_BURST_CNT-1:0]  r_burst_cnt;
+reg [BW_TRANS_CNT-1:0]  r_transaction_counter;
+wire                    reset_addr_pointer;
+
+assign mst_axi_wdata    = w_fifo_data_out;
+assign mst_axi_wstrb    = 4'b1111;
+assign mst_axi_wlast    = (r_burst_cnt == BURST_SIZE-1);
+assign mst_axi_wvalid   = !w_fifo_empty && (transaction_counter != 0);
+
 always @(posedge clk_sys or negedge rst_sys_n) begin
-    if(!rst_sys_n)      r_fifo_data_out <= 'b0;
-    else if(st_ready)   r_fifo_data_out <= w_fifo_data_out;
+    if(!rst_sys_n)                                                                              transaction_counter <= 'b0;
+    else if(dma_enable)                                                                         transaction_counter <= 'b0;
+    else if(r_mst_axi_awvalid && mst_axi_awready && mst_axi_bvalid && mst_axi_bready)           transaction_counter <= transaction_counter;
+    else if(r_mst_axi_awvalid && mst_axi_awready)                                               transaction_counter <= transaction_counter + 1;
+    else if(mst_axi_bvalid && mst_axi_bready)                                                   transaction_counter <= transaction_counter - 1;
 end
 
 always @(posedge clk_sys or negedge rst_sys_n) begin
-    if(!rst_sys_n)  r_data_out_valid <= 'b0;
-    else            r_data_out_valid <= !w_fifo_empty;
+    if(!rst_sys_n)                                                                                                      r_mst_axi_awvalid <= 1'b0;
+    else if(dma_enable)                                                                                                 r_mst_axi_awvalid <= 1'b1;
+    else if((transaction_counter <= MAX_OUTSTANDING_TR) && ((w_rd_data_count - r_burst_cnt) > BURST_SIZE))              r_mst_axi_awvalid <= 1'b1;
+    else                                                                                                                r_mst_axi_awvalid <= 1'b0;
 end
 
+always @(posedge clk_sys or negedge rst_sys_n) begin
+    if(!rst_sys_n)                                  r_mst_axi_awaddr <= 1'b0;
+    else if(dma_enable)                             r_mst_axi_awaddr <= 1'b0;
+    else if(reset_addr_pointer)                     r_mst_axi_awaddr <= start_addr;
+    else if(r_mst_axi_awvalid && mst_axi_awready)   r_mst_axi_awaddr <= r_mst_axi_awaddr + BURST_SIZE;
+end
 
-
+always @(posedge clk_sys or negedge rst_sys_n) begin
+    if(!rst_sys_n)                                                  r_burst_cnt <= 'b0;
+    else if(dma_enable)                                             r_burst_cnt <= 'b0;
+    else if(mst_axi_wlast && mst_axi_wvalid && mst_axi_wready)      r_burst_cnt <= 'b0;
+    else if(mst_axi_wvalid && mst_axi_wready)                       r_burst_cnt <= r_burst_cnt + 1;
+end
 
 endmodule

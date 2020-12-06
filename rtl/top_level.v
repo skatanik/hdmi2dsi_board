@@ -276,6 +276,14 @@ wire [31:0]                        ctrl_prog_mem_writedata;
 wire [3:0]                         ctrl_prog_mem_byteenable;
 wire                               ctrl_prog_mem_waitrequest;
 
+wire                               ctrl_hdmi_read;
+wire [31:0]                        ctrl_hdmi_readdata;
+wire [1:0]                         ctrl_hdmi_response;
+wire                               ctrl_hdmi_write;
+wire [31:0]                        ctrl_hdmi_writedata;
+wire [3:0]                         ctrl_hdmi_byteenable;
+wire                               ctrl_hdmi_waitrequest;
+
 wire [32-1:0] irq_vec;
 wire          dsi_irq;
 wire          usart_irq;
@@ -385,13 +393,14 @@ wire [M2_ADDR_WIDTH-1:0]                         ctrl_pix_reader_address;
 wire [M3_ADDR_WIDTH-1:0]                         ctrl_dsi_address;
 wire [M4_ADDR_WIDTH-1:0]                         ctrl_prog_mem_address;
 wire [M5_ADDR_WIDTH-1:0]                         ctrl_uart_address;
+wire [M1_ADDR_WIDTH-1:0]                         ctrl_hdmi_address;
 
 interconnect_mod #(
     .M0_BASE(32'h0000_0000),    //* DDR
     .M0_MASK(32'hFFFC_0000),    //* DDR
     .M0_ADDR_W(M0_ADDR_WIDTH),
-    .M1_BASE(32'hFFFF_FFFF),    //! TODO
-    .M1_MASK(32'h0000_0000),    //! TODO
+    .M1_BASE(32'h0100_1000),    // HDMI
+    .M1_MASK(32'hFFFF_FF00),    // HDMI
     .M1_ADDR_W(M1_ADDR_WIDTH),
     .M2_BASE(32'h0100_1200),    //* PIX READER
     .M2_MASK(32'hFFFF_FF00),    //* PIX READER
@@ -405,14 +414,14 @@ interconnect_mod #(
     .M5_BASE(32'h0100_1400),    //* UART
     .M5_MASK(32'hFFFF_FF00),    //* UART
     .M5_ADDR_W(M5_ADDR_WIDTH),
-    .M6_BASE(32'hFFFF_FFFF),    //! TODO
-    .M6_MASK(32'h0000_0000),    //! TODO
+    .M6_BASE(32'hFFFF_FFFF),    //! I2C HDMI
+    .M6_MASK(32'h0000_0000),    //! I2C HDMI
     .M6_ADDR_W(M6_ADDR_WIDTH),
-    .M7_BASE(32'hFFFF_FFFF),    //! TODO
-    .M7_MASK(32'h0000_0000),    //! TODO
+    .M7_BASE(32'hFFFF_FFFF),    //! I2C EEPROM
+    .M7_MASK(32'h0000_0000),    //! I2C EEPROM
     .M7_ADDR_W(M7_ADDR_WIDTH),
-    .M8_BASE(32'hFFFF_FFFF),    //! TODO
-    .M8_MASK(32'h0000_0000),    //! TODO
+    .M8_BASE(32'hFFFF_FFFF),    //! GPIO
+    .M8_MASK(32'h0000_0000),    //! GPIO
     .M8_ADDR_W(M8_ADDR_WIDTH),
     .M9_BASE(32'hFFFF_FFFF),    //! TODO
     .M9_MASK(32'h0000_0000),    //! TODO
@@ -439,14 +448,14 @@ interconnect_mod #(
     .m0_bus_waitrequest         (ram_mem_waitrequest    ),
 
     //* Master port 1
-    .m1_bus_addr                (),
-    .m1_bus_read                (),
-    .m1_bus_readdata            (),
-    .m1_bus_response            (),
-    .m1_bus_write               (),
-    .m1_bus_writedata           (),
-    .m1_bus_byteenable          (),
-    .m1_bus_waitrequest         (1'b0),
+    .m1_bus_addr                (ctrl_hdmi_address              ),
+    .m1_bus_read                (ctrl_hdmi_read                 ),
+    .m1_bus_readdata            (ctrl_hdmi_readdata             ),
+    .m1_bus_response            (ctrl_hdmi_response             ),
+    .m1_bus_write               (ctrl_hdmi_write                ),
+    .m1_bus_writedata           (ctrl_hdmi_writedata            ),
+    .m1_bus_byteenable          (ctrl_hdmi_byteenable           ),
+    .m1_bus_waitrequest         (ctrl_hdmi_waitrequest          ),
 
     //* Master port 2
     .m2_bus_addr                (ctrl_pix_reader_address       ),
@@ -950,7 +959,53 @@ u_mig_ddr3 (
 
 //* HDMI ADV Recv
 
-//* HDMI native
+hdmi_recv hdmi_recv_0(
+    .hdmi_rst_n              (hdmi_rst                  ),
+    .hdmi_clk                (hdmi_clk_buf              ),
+
+    .hdmi_data               (hdmi_data                 ),
+    .hdmi_hs                 (hdmi_hs                   ),
+    .hdmi_vs                 (hdmi_vs                   ),
+    .hdmi_de                 (hdmi_de                   ),
+
+    /********* AXI write channels *********/
+    .clk_sys                 (sys_clk                   ),
+    .rst_sys_n               (sys_rst_n                 ),
+
+    .mst_axi_awid            (hdmi_axi_awid             ),
+    .mst_axi_awaddr          (hdmi_axi_awaddr           ),
+    .mst_axi_awlen           (hdmi_axi_awlen            ),
+    .mst_axi_awsize          (hdmi_axi_awsize           ),
+    .mst_axi_awburst         (hdmi_axi_awburst          ),
+    .mst_axi_awlock          (hdmi_axi_awlock           ),
+    .mst_axi_awcache         (hdmi_axi_awcache          ),
+    .mst_axi_awprot          (hdmi_axi_awprot           ),
+    .mst_axi_awqos           (hdmi_axi_awqos            ),
+    .mst_axi_awvalid         (hdmi_axi_awvalid          ),
+    .mst_axi_awready         (hdmi_axi_awready          ),
+
+    .mst_axi_wdata           (hdmi_axi_wdata            ),
+    .mst_axi_wstrb           (hdmi_axi_wstrb            ),
+    .mst_axi_wlast           (hdmi_axi_wlast            ),
+    .mst_axi_wvalid          (hdmi_axi_wvalid           ),
+    .mst_axi_wready          (hdmi_axi_wready           ),
+
+    .mst_axi_bid             (hdmi_axi_bid              ),
+    .mst_axi_wid             (hdmi_axi_wid              ),
+    .mst_axi_bresp           (hdmi_axi_bresp            ),
+    .mst_axi_bvalid          (hdmi_axi_bvalid           ),
+    .mst_axi_bready          (hdmi_axi_bready           ),
+
+    /********* MM iface *********/
+    .ctrl_address            (ctrl_hdmi_address         ),
+    .ctrl_read               (ctrl_hdmi_read            ),
+    .ctrl_readdata           (ctrl_hdmi_readdata        ),
+    .ctrl_response           (ctrl_hdmi_response        ),
+    .ctrl_write              (ctrl_hdmi_write           ),
+    .ctrl_writedata          (ctrl_hdmi_writedata       ),
+    .ctrl_byteenable         (ctrl_hdmi_byteenable      ),
+    .ctrl_waitrequest        (ctrl_hdmi_waitrequest     )
+);
 
 //* Pixel reader
 axi_to_stream_dma #(

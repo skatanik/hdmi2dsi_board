@@ -174,7 +174,11 @@ initial
 begin
 
 slave_agent = new("axi4_slave_vip", dsi_host_top_0.slave_ram.inst.IF);
+slave_agent_pix_rd = new("axi4_slave_vip", dsi_host_top_0.slave_ro.inst.IF);
+slave_agent_pix_wr = new("axi4_slave_vip", dsi_host_top_0.slave_wo.inst.IF);
 slave_agent.start_slave();
+slave_agent_pix_rd.start_slave();
+slave_agent_pix_wr.start_slave();
 
 fork
     wr_response();
@@ -253,5 +257,69 @@ function automatic void fill_wr_reactive(inout axi_transaction t);
     t.set_beat_delay(0,$urandom_range(0,10));
 endfunction: fill_wr_reactive
 
+task wr_pix_response();
+    // Declare a handle for write response
+    axi_transaction                    wr_reactive;
+    integer trans_len;
+    integer trans_addr;
+    integer trans_data;
+
+    forever begin
+        // Block till write transaction occurs
+        slave_agent_pix_wr.wr_driver.get_wr_reactive (wr_reactive);
+        trans_len = wr_reactive.get_len();
+        trans_addr = wr_reactive.get_addr();
+        trans_data = wr_reactive.get_data_beat(0);
+        $display("\n/********* AXI WRITE TRANSACTION ********/\n");
+        $display("Len = %d\n", trans_len);
+        $display("Addr = %h\n", trans_addr);
+        $display("Data = %h\n", trans_data);
+        $display("/****************************************/\n");
+
+        ram_memory[trans_addr/4] = trans_data;
+
+        // User fill in write response
+        fill_wr_reactive                (wr_reactive);
+
+        // Write driver send response to VIP interface
+        slave_agent_pix_wr.wr_driver.send            (wr_reactive);
+    end
+endtask
+
+task rd_pix_response();
+    // Declare a handle for write response
+    axi_transaction                    rd_reactive;
+    integer trans_len;
+    integer trans_addr;
+    logic [7:0] trans_data[3:0];
+    integer i;
+
+    forever begin
+        // Block till write transaction occurs
+        slave_agent_pix_rd.rd_driver.get_rd_reactive (rd_reactive);
+
+        trans_len = rd_reactive.get_len();
+        trans_addr = rd_reactive.get_addr();
+
+        for(i = 0; i < 4; i++) begin
+            trans_data[i] = ram_memory[trans_addr/4][i*8+:8];
+        end
+
+        $display("\n/********* AXI READ TRANSACTION ********/\n");
+        $display("Len = %d\n", trans_len);
+        $display("Addr = %h\n", trans_addr);
+        $display("Read data = %h\n", ram_memory[trans_addr/4]);
+        $display("/****************************************/\n");
+
+        rd_reactive.set_data_beat_unpacked(rd_reactive.get_beat_index(),trans_data);
+        rd_reactive.clr_beat_index();
+
+        rd_reactive.set_beat_delay(0,$urandom_range(0,10));
+
+        // rd_reactive.set_data_beat(0, trans_data, 1, 4'h1111);
+        // Write driver send response to VIP interface
+        slave_agent_pix_rd.rd_driver.send            (rd_reactive);
+    end
+endtask
 
 endmodule
