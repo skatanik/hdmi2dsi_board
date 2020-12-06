@@ -38,11 +38,11 @@ wire            dphy_clk_hs_out_n       ;
 wire            dphy_clk_lp_out_p       ;
 wire            dphy_clk_lp_out_n       ;
     /* HDMI parallel */
-wire [24-1:0]   hdmi_data               ;
-wire            hdmi_hs                 ;
-wire            hdmi_vs                 ;
-wire            hdmi_de                 ;
-wire            hdmi_clk                ;
+reg [24-1:0]   hdmi_data               ;
+reg            hdmi_hs                 ;
+reg            hdmi_vs                 ;
+reg            hdmi_de                 ;
+reg            hdmi_clk                ;
 
     /* I2C ADV */
     /* I2C EEPROM */
@@ -67,17 +67,36 @@ begin
 end
 end
 
+initial
+begin
+hdmi_clk = 0;
+#500
+forever
+begin
+    #25 hdmi_clk = ~hdmi_clk;
+end
+end
+
 
 initial
 begin
 r_rst_n = 0;
-
 repeat(1000) @(posedge r_clk_25);
-
 r_rst_n = 1;
-
-
 end
+
+
+// 640x480
+localparam VS_FULL_SIZE = 740;
+localparam VS_FP_SIZE = 50;
+localparam VS_BP_SIZE = 50;
+localparam HS_FULL_SIZE = 540;
+localparam HS_FP_SIZE = 20;
+localparam HS_BP_SIZE = 20;
+localparam DE_FULL_SIZE = 540;
+localparam DE_FP_SIZE = 10;
+localparam DE_BP_SIZE = 10;
+
 
 dsi_host_top dsi_host_top_0(
     /* CLK */
@@ -142,6 +161,22 @@ always @(negedge dsi_host_top_0.picorv32_core.clk) begin
 end
 
 
+reg hdmi_enable;
+
+initial begin
+wait(r_rst_n == 1)
+hdmi_enable = 1;
+end
+
+
+always @(posedge dsi_host_top_0.picorv32_core.clk) begin
+    if(dsi_host_top_0.picorv32_core.bus_write) begin
+        if(dsi_host_top_0.picorv32_core.bus_addr == 32'h1100_0000) begin
+            hdmi_enable <= dsi_host_top_0.picorv32_core.bus_writedata[0];
+        end
+    end
+end
+
 reg req_ADDR    [31:0];
 reg req_LEN     [7:0];
 reg req_SIZE    [31:0];
@@ -156,6 +191,8 @@ reg req_IDTAG   [31:0];
 integer res;
 
 axi4_slave_vip_slv_t slave_agent;
+axi4_slave_vip_slv_t slave_agent_pix_rd;
+axi4_slave_vip_slv_t slave_agent_pix_wr;
 
 localparam RAM_MEM_DEPTH = 2**(18-2);
 
@@ -174,8 +211,8 @@ initial
 begin
 
 slave_agent = new("axi4_slave_vip", dsi_host_top_0.slave_ram.inst.IF);
-slave_agent_pix_rd = new("axi4_slave_vip", dsi_host_top_0.slave_ro.inst.IF);
-slave_agent_pix_wr = new("axi4_slave_vip", dsi_host_top_0.slave_wo.inst.IF);
+slave_agent_pix_rd = new("axi4_slave_vip_rd", dsi_host_top_0.slave_ro.inst.IF);
+slave_agent_pix_wr = new("axi4_slave_vip_wr", dsi_host_top_0.slave_wo.inst.IF);
 slave_agent.start_slave();
 slave_agent_pix_rd.start_slave();
 slave_agent_pix_wr.start_slave();
@@ -183,6 +220,9 @@ slave_agent_pix_wr.start_slave();
 fork
     wr_response();
     rd_response();
+    wr_pix_response();
+    rd_pix_response();
+    hdmi_streamer();
 join_none
 
 end
@@ -319,6 +359,66 @@ task rd_pix_response();
         // rd_reactive.set_data_beat(0, trans_data, 1, 4'h1111);
         // Write driver send response to VIP interface
         slave_agent_pix_rd.rd_driver.send            (rd_reactive);
+    end
+endtask
+
+task hdmi_streamer();
+
+    integer vs_counter;
+    integer hs_counter;
+    integer de_counter;
+
+    vs_counter = 0;
+    hs_counter = 0;
+    de_counter = 0;
+
+    forever begin
+        repeat(1) @(posedge hdmi_clk);
+        if(hdmi_enable)
+        begin
+
+            if(hs_counter == HS_FULL_SIZE) begin
+                hs_counter = 0;
+                de_counter = 0;
+                if(vs_counter == VS_FULL_SIZE)
+                    vs_counter = 0;
+                else
+                    vs_counter = vs_counter + 1;
+            end
+            else begin
+                hs_counter = hs_counter + 1;
+                de_counter = de_counter + 1;
+            end
+
+            if(hs_counter >= HS_FP_SIZE && hs_counter < HS_FULL_SIZE + DE_BP_SIZE + HS_BP_SIZE)
+                hdmi_hs = 1;
+            else
+                hdmi_hs = 0;
+
+            if(hs_counter >= HS_FP_SIZE+DE_FP_SIZE && hs_counter < HS_FULL_SIZE + DE_BP_SIZE && hdmi_vs)
+                hdmi_de = 1;
+            else
+                hdmi_de = 0;
+
+            if(vs_counter >= VS_FP_SIZE && vs_counter < VS_FULL_SIZE + VS_BP_SIZE)
+                hdmi_vs = 1;
+            else
+                hdmi_vs = 0;
+
+            if(hdmi_de == 1)
+                hdmi_data = $urandom_range(0, 24'hffffff);
+            else
+                hdmi_data = 0;
+
+        end
+        else begin
+            hdmi_data = 0;
+            hdmi_hs = 0;
+            hdmi_vs = 0;
+            hdmi_de = 0;
+        end
+
+
     end
 endtask
 

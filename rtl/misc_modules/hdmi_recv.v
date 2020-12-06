@@ -120,7 +120,7 @@ assign sys_write_ready = 1'b1;
 assign sys_read_ready = 1'b1;
 assign sys_read_data = 'b0;
 
-reg [ADDR_WIDTH-1:0] start_addr;
+reg [24-1:0] start_addr;
 reg [30-1:0] words_number;
 reg dma_enable;
 reg reg_fifo_full;
@@ -159,9 +159,14 @@ reg [4:0] hs_line_resync;
 reg [4:0] vs_line_resync;
 reg [5:0] de_line_resync;
 
+integer i;
+
 always @(posedge hdmi_clk or negedge hdmi_rst_n) begin
     if(!hdmi_rst_n) begin
-        data_line_resync <= 'b0;
+        for (i=0; i<5; i=i+1) begin
+            data_line_resync[i] <= 'b0;
+        end
+
         hs_line_resync <= 'b0;
         vs_line_resync <= 'b0;
         de_line_resync <= 'b0;
@@ -172,7 +177,10 @@ always @(posedge hdmi_clk or negedge hdmi_rst_n) begin
         vs_line_resync[0] <= hdmi_vs;
         de_line_resync[0] <= hdmi_de;
 
-        data_line_resync[4:1] <= data_line_resync[3:0];
+        for (i=1; i<5; i=i+1) begin
+            data_line_resync[i] <= data_line_resync[i-1];
+        end
+
         hs_line_resync[4:1] <= hs_line_resync[3:0];
         vs_line_resync[4:1] <= vs_line_resync[3:0];
         de_line_resync[5:1] <= de_line_resync[4:0];
@@ -246,20 +254,20 @@ wire                    reset_addr_pointer;
 assign mst_axi_wdata    = w_fifo_data_out;
 assign mst_axi_wstrb    = 4'b1111;
 assign mst_axi_wlast    = (r_burst_cnt == BURST_SIZE-1);
-assign mst_axi_wvalid   = !w_fifo_empty && (transaction_counter != 0);
+assign mst_axi_wvalid   = !w_fifo_empty && (r_transaction_counter != 0);
 
 always @(posedge clk_sys or negedge rst_sys_n) begin
-    if(!rst_sys_n)                                                                              transaction_counter <= 'b0;
-    else if(dma_enable)                                                                         transaction_counter <= 'b0;
-    else if(r_mst_axi_awvalid && mst_axi_awready && mst_axi_bvalid && mst_axi_bready)           transaction_counter <= transaction_counter;
-    else if(r_mst_axi_awvalid && mst_axi_awready)                                               transaction_counter <= transaction_counter + 1;
-    else if(mst_axi_bvalid && mst_axi_bready)                                                   transaction_counter <= transaction_counter - 1;
+    if(!rst_sys_n)                                                                              r_transaction_counter <= 'b0;
+    else if(dma_enable)                                                                         r_transaction_counter <= 'b0;
+    else if(r_mst_axi_awvalid && mst_axi_awready && mst_axi_bvalid && mst_axi_bready)           r_transaction_counter <= r_transaction_counter;
+    else if(r_mst_axi_awvalid && mst_axi_awready)                                               r_transaction_counter <= r_transaction_counter + 1;
+    else if(mst_axi_bvalid && mst_axi_bready)                                                   r_transaction_counter <= r_transaction_counter - 1;
 end
 
 always @(posedge clk_sys or negedge rst_sys_n) begin
     if(!rst_sys_n)                                                                                                      r_mst_axi_awvalid <= 1'b0;
     else if(dma_enable)                                                                                                 r_mst_axi_awvalid <= 1'b1;
-    else if((transaction_counter <= MAX_OUTSTANDING_TR) && ((w_rd_data_count - r_burst_cnt) > BURST_SIZE))              r_mst_axi_awvalid <= 1'b1;
+    else if((r_transaction_counter <= MAX_OUTSTANDING_TR) && ((w_rd_data_count - r_burst_cnt) > BURST_SIZE))            r_mst_axi_awvalid <= 1'b1;
     else                                                                                                                r_mst_axi_awvalid <= 1'b0;
 end
 
@@ -276,5 +284,9 @@ always @(posedge clk_sys or negedge rst_sys_n) begin
     else if(mst_axi_wlast && mst_axi_wvalid && mst_axi_wready)      r_burst_cnt <= 'b0;
     else if(mst_axi_wvalid && mst_axi_wready)                       r_burst_cnt <= r_burst_cnt + 1;
 end
+
+assign mst_axi_awaddr       = r_mst_axi_awaddr;
+assign mst_axi_awlen        = BURST_SIZE-1; //r_mst_axi_awlen;
+assign mst_axi_awvalid      = r_mst_axi_awvalid;
 
 endmodule
