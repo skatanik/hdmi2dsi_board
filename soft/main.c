@@ -8,36 +8,30 @@
  ============================================================================
  */
 
-#include <stdio.h>
+#include <stdint.h>
 
 #define OUTPORT 0x10000000
 #define WRITE_REG(x,y)          *((volatile uint32_t*)x) = (uint32_t)y
 #define READ_REG(x,y)           y = (uint32_t)*((volatile uint32_t*)x)
+
+typedef struct
+{
+    uint32_t destination_addr_reg;
+    uint32_t pixels_number_reg;
+    uint32_t control_reg;
+}td_hdmi_recv_struct;
+
+#define HDMI_RECV  ((td_hdmi_recv_struct *) 0x01001000)
+
 /*
- * Demonstrate how to print a greeting message on standard output
- * and exit.
- *
- * WARNING: This is a build-only project. Do not try to run it on a
- * physical board, since it lacks the device specific startup.
  */
 // riscv32-unknown-elf-elf2hex --bit-width 32 --input test_riscv.elf --output test_riscv.hex
 
-// #ifdef __GNUC__
-// /* With GCC, small printf (option LD Linker->Libraries->Small printf
-//    set to 'Yes') calls __io_putchar() */
-// #define PUTCHAR_PROTOTYPE int __io_putchar(int ch)
-// #else
-// #define PUTCHAR_PROTOTYPE int putc(int ch, FILE *f)
-// #endif /* __GNUC__ */
-
 int main(void)
 {
-    // volatile int a = 0x7658;
-	// volatile int i = 0;
+
 
     volatile uint32_t y;
-
-    // printf("Hello RISC-V World!" "\n");
 
     WRITE_REG(OUTPORT, 0x1234);
 
@@ -51,20 +45,16 @@ int main(void)
 
     WRITE_REG(OUTPORT, y);
 
-    // *((volatile uint32_t*)OUTPORT) = (uint32_t) 0x1234;
-    // // a = 12;
-	// *((volatile uint32_t*)OUTPORT) = (uint32_t) 0x5678;
-    // // a = 234;
-    // *((volatile uint32_t*)OUTPORT) = (uint32_t) a;
-	// *((volatile uint32_t*)OUTPORT) = (uint32_t) 0xffff;
+    WRITE_REG(OUTPORT, y);
+
+    WRITE_REG(OUTPORT, y);
+
+    HDMI_RECV->destination_addr_reg = 0x0010000;
+    HDMI_RECV->pixels_number_reg = 640*480;
+
+    HDMI_RECV->control_reg = 1;
+
+    WRITE_REG(0x11000000, 0x1); // run external hdmi
+
   return 0;
 }
-
-// PUTCHAR_PROTOTYPE
-// {
-//   /* Place your implementation of fputc here */
-//   /* e.g. write a character to the LPUART1 and Loop until the end of transmission */
-//  *((volatile uint32_t*)OUTPORT) = ch;
-
-//   return ch;
-// }

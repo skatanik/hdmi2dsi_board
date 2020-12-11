@@ -70,7 +70,7 @@ end
 initial
 begin
 hdmi_clk = 0;
-#500
+#333
 forever
 begin
     #25 hdmi_clk = ~hdmi_clk;
@@ -165,7 +165,7 @@ reg hdmi_enable;
 
 initial begin
 wait(r_rst_n == 1)
-hdmi_enable = 1;
+hdmi_enable = 0;
 end
 
 
