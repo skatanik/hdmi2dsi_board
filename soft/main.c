@@ -21,7 +21,31 @@ typedef struct
     uint32_t control_reg;
 }td_hdmi_recv_struct;
 
+typedef struct
+{
+    uint32_t destination_addr_reg;
+    uint32_t words_number_reg;
+    uint32_t control_reg;
+}td_axi2stream_struct;
+
+typedef struct
+{
+    uint32_t dsi_reg_cr;
+    uint32_t dsi_reg_isr;
+    uint32_t dsi_reg_ier;
+    uint32_t dsi_reg_tr1;
+    uint32_t dsi_reg_tr2;
+    uint32_t dsi_reg_cmd;
+}td_dsi_struct;
+
+
 #define HDMI_RECV  ((td_hdmi_recv_struct *) 0x01001000)
+#define DSI  ((td_dsi_struct *) 0x01001300)
+#define PIX_READER  ((td_axi2stream_struct *) 0x01001200)
+#define UART  ((td_hdmi_recv_struct *) 0x01001400)
+#define I2C_HDMI  ((td_hdmi_recv_struct *) 0x01001500)
+#define I2C_EEPROM  ((td_hdmi_recv_struct *) 0x1001600)
+#define GPIO  ((td_hdmi_recv_struct *) 0x01001700)
 
 /*
  */

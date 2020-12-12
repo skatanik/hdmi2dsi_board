@@ -414,13 +414,13 @@ interconnect_mod #(
     .M5_BASE(32'h0100_1400),    //* UART
     .M5_MASK(32'hFFFF_FF00),    //* UART
     .M5_ADDR_W(M5_ADDR_WIDTH),
-    .M6_BASE(32'hFFFF_FFFF),    //! I2C HDMI
+    .M6_BASE(32'h0100_1500),    //! I2C HDMI
     .M6_MASK(32'h0000_0000),    //! I2C HDMI
     .M6_ADDR_W(M6_ADDR_WIDTH),
-    .M7_BASE(32'hFFFF_FFFF),    //! I2C EEPROM
+    .M7_BASE(32'h0100_1600),    //! I2C EEPROM
     .M7_MASK(32'h0000_0000),    //! I2C EEPROM
     .M7_ADDR_W(M7_ADDR_WIDTH),
-    .M8_BASE(32'hFFFF_FFFF),    //! GPIO
+    .M8_BASE(32'h0100_1700),    //! GPIO
     .M8_MASK(32'h0000_0000),    //! GPIO
     .M8_ADDR_W(M8_ADDR_WIDTH),
     .M9_BASE(32'hFFFF_FFFF),    //! TODO
