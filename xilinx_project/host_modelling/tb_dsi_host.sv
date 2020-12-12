@@ -51,6 +51,10 @@ reg            hdmi_clk                ;
 wire             rxd                     ;
 wire             txd                     ;
 
+logic [7:0] video_memory_send [640*480*3-1:0]; //
+logic [7:0] video_memory_recv [640*480*3-1:0]; //
+integer recv_vid_ind;
+
 reg r_clk_25;
 reg r_rst_n;
 
@@ -225,6 +229,7 @@ fork
     hdmi_streamer();
 join_none
 
+
 end
 
 task wr_response();
@@ -240,7 +245,7 @@ task wr_response();
         trans_len = wr_reactive.get_len();
         trans_addr = wr_reactive.get_addr();
         trans_data = wr_reactive.get_data_beat(0);
-        $display("\n/********* AXI WRITE TRANSACTION ********/\n");
+        $display("\n/********* CPU->RAM AXI WRITE TRANSACTION ********/\n");
         $display("Len = %d\n", trans_len);
         $display("Addr = %h\n", trans_addr);
         $display("Data = %h\n", trans_data);
@@ -275,7 +280,7 @@ task rd_response();
             trans_data[i] = ram_memory[trans_addr/4][i*8+:8];
         end
 
-        $display("\n/********* AXI READ TRANSACTION ********/\n");
+        $display("\n/********* RAM->CPU AXI READ TRANSACTION ********/\n");
         $display("Len = %d\n", trans_len);
         $display("Addr = %h\n", trans_addr);
         $display("Read data = %h\n", ram_memory[trans_addr/4]);
@@ -302,21 +307,60 @@ task wr_pix_response();
     axi_transaction                    wr_reactive;
     integer trans_len;
     integer trans_addr;
-    integer trans_data;
+    logic [31:0] trans_data;
+    logic [31:0] given_data;
+    integer ind_mem;
+    integer ind;
+    integer errors_counter;
 
     forever begin
         // Block till write transaction occurs
         slave_agent_pix_wr.wr_driver.get_wr_reactive (wr_reactive);
         trans_len = wr_reactive.get_len();
         trans_addr = wr_reactive.get_addr();
-        trans_data = wr_reactive.get_data_beat(0);
-        $display("\n/********* AXI WRITE TRANSACTION ********/\n");
+        $display("\n/********* HDMI->RAM AXI WRITE TRANSACTION ********/\n");
         $display("Len = %d\n", trans_len);
         $display("Addr = %h\n", trans_addr);
-        $display("Data = %h\n", trans_data);
-        $display("/****************************************/\n");
 
-        ram_memory[trans_addr/4] = trans_data;
+
+        for(ind_mem = 0; ind_mem <= trans_len; ind_mem = ind_mem + 1 ) begin
+
+            trans_data = wr_reactive.get_data_beat(ind_mem);
+            // $display("Data = %h\n", trans_data);
+            ram_memory[(trans_addr+ind_mem)/4] = trans_data;
+
+            video_memory_recv[(recv_vid_ind)*4+0] = trans_data[8*0+:8];
+            video_memory_recv[(recv_vid_ind)*4+1] = trans_data[8*1+:8];
+            video_memory_recv[(recv_vid_ind)*4+2] = trans_data[8*2+:8];
+            video_memory_recv[(recv_vid_ind)*4+3] = trans_data[8*3+:8];
+
+            given_data[8*0+:8] = video_memory_send[(recv_vid_ind)*4+0];
+            given_data[8*1+:8] = video_memory_send[(recv_vid_ind)*4+1];
+            given_data[8*2+:8] = video_memory_send[(recv_vid_ind)*4+2];
+            given_data[8*3+:8] = video_memory_send[(recv_vid_ind)*4+3];
+
+            // errors_counter = 0;
+
+            // for(ind = 0; ind < 4; ind = ind + 1) begin
+            //     if(video_memory_recv[(recv_vid_ind)*4+ind] != video_memory_send[(recv_vid_ind)*4+ind])
+            //     begin
+            //         errors_counter = errors_counter + 1;
+            //     end
+            // end
+
+            if(given_data != trans_data) begin
+                $display("Compare data error on addr %d\n", recv_vid_ind*4);
+                $display("%h != %h\n", given_data, trans_data);
+                $stop();
+            end
+
+            // if(errors_counter == 0)
+            //     $display("Data check OK\n");
+
+            recv_vid_ind = recv_vid_ind + 1;
+
+        end
+        $display("/****************************************/\n");
 
         // User fill in write response
         fill_wr_reactive                (wr_reactive);
@@ -345,7 +389,7 @@ task rd_pix_response();
             trans_data[i] = ram_memory[trans_addr/4][i*8+:8];
         end
 
-        $display("\n/********* AXI READ TRANSACTION ********/\n");
+        $display("\n/********* RAM->DSI AXI READ TRANSACTION ********/\n");
         $display("Len = %d\n", trans_len);
         $display("Addr = %h\n", trans_addr);
         $display("Read data = %h\n", ram_memory[trans_addr/4]);
@@ -367,10 +411,12 @@ task hdmi_streamer();
     integer vs_counter;
     integer hs_counter;
     integer de_counter;
+    integer vid_trn_num;
 
     vs_counter = 0;
     hs_counter = 0;
     de_counter = 0;
+    vid_trn_num = 0;
 
     forever begin
         repeat(1) @(posedge hdmi_clk);
@@ -381,7 +427,12 @@ task hdmi_streamer();
                 hs_counter = 0;
                 de_counter = 0;
                 if(vs_counter == VS_FULL_SIZE)
+                begin
                     vs_counter = 0;
+                    vid_trn_num = 0;
+                    recv_vid_ind = 0;
+                    check_hdmi_ram_mem();
+                end
                 else
                     vs_counter = vs_counter + 1;
             end
@@ -390,23 +441,28 @@ task hdmi_streamer();
                 de_counter = de_counter + 1;
             end
 
-            if(hs_counter >= HS_FP_SIZE && hs_counter < HS_FULL_SIZE + DE_BP_SIZE + HS_BP_SIZE)
+            if(hs_counter >= HS_FP_SIZE && hs_counter < HS_FULL_SIZE - HS_BP_SIZE)
                 hdmi_hs = 1;
             else
                 hdmi_hs = 0;
 
-            if(hs_counter >= HS_FP_SIZE+DE_FP_SIZE && hs_counter < HS_FULL_SIZE + DE_BP_SIZE && hdmi_vs)
+            if(hs_counter >= HS_FP_SIZE+DE_FP_SIZE && hs_counter < HS_FULL_SIZE - DE_BP_SIZE - HS_BP_SIZE && hdmi_vs)
                 hdmi_de = 1;
             else
                 hdmi_de = 0;
 
-            if(vs_counter >= VS_FP_SIZE && vs_counter < VS_FULL_SIZE + VS_BP_SIZE)
+            if(vs_counter >= VS_FP_SIZE && vs_counter < VS_FULL_SIZE - VS_BP_SIZE)
                 hdmi_vs = 1;
             else
                 hdmi_vs = 0;
 
-            if(hdmi_de == 1)
+            if(hdmi_de == 1) begin
                 hdmi_data = $urandom_range(0, 24'hffffff);
+                video_memory_send[vid_trn_num*3+0] = hdmi_data[7:0];
+                video_memory_send[vid_trn_num*3+1] = hdmi_data[15:8];
+                video_memory_send[vid_trn_num*3+2] = hdmi_data[23:16];
+                vid_trn_num = vid_trn_num + 1;
+            end
             else
                 hdmi_data = 0;
 
@@ -416,10 +472,35 @@ task hdmi_streamer();
             hdmi_hs = 0;
             hdmi_vs = 0;
             hdmi_de = 0;
+            vid_trn_num = 0;
+            recv_vid_ind = 0;
         end
 
 
     end
 endtask
+
+function automatic void check_hdmi_ram_mem();
+    integer ind;
+    integer error_count;
+    error_count = 0;
+    for(ind = 0; ind < 640*480*3; ind = ind + 1)
+    begin
+        if(video_memory_recv[ind] != video_memory_send[ind])
+        begin
+            $display("\nCompare data error on addr %d", ind);
+            error_count = error_count + 1;
+        end
+    end
+
+     $display("\nCompare data errors number %d", error_count);
+    if(error_count == 0)
+        $display("\n HDMI-> RAM Test Passed");
+    else
+        $display("\n HDMI-> RAM Test Failed");
+
+    $stop();
+
+endfunction
 
 endmodule
