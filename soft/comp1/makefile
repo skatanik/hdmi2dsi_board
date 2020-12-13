@@ -1,16 +1,18 @@
 # ******* project, board and chip name *******
 # -nostdlib
-F32C-COMPILER-PATH=/opt/riscv32i/bin
-RISCV32-GCC=$(F32C-COMPILER-PATH)/riscv32-unknown-elf-gcc
-RISCV32-OBJCOPY=$(F32C-COMPILER-PATH)/riscv32-unknown-elf-objcopy
+F32C-COMPILER-PATH=/opt/riscv/bin
+RISCV32-GCC=$(F32C-COMPILER-PATH)/riscv64-unknown-linux-gnu-gcc
+RISCV32-OBJCOPY=$(F32C-COMPILER-PATH)/riscv64-unknown-linux-gnu-objcopy
+RISCV32-DUMP=$(F32C-COMPILER-PATH)/riscv64-unknown-linux-gnu-objdump
 
 prgr_rom.mif:
-
+#L/opt/riscv/riscv64-unknown-linux-gnu/lib32/ilp32/ -lgcc_s
 firmware.elf: sections.ld start.s ./../main.c
-	$(RISCV32-GCC) -march=rv32i -mabi=ilp32 -Wl,-Bstatic,-lc,-T,sections.ld,--strip-debug -nostdlib -ffreestanding -O1 -o firmware.elf start.s ./../main.c
+	$(RISCV32-GCC) -march=rv32i -mabi=ilp32 -Wl,-Bstatic,-lc,-T,sections.ld,--strip-debug -ffreestanding -nostdlib -O1 -o firmware.elf start.s ./../main.c #--verbose
 
 firmware.bin: firmware.elf
 	$(RISCV32-OBJCOPY) -O binary firmware.elf /dev/stdout > firmware.bin
+#	$(RISCV32-DUMP) -dS ./../main.o > obj_dumb.log
 
 firmware.coe: firmware.bin
 	python3 makehex.py $^ 256 > $@

@@ -217,6 +217,9 @@ begin
 slave_agent = new("axi4_slave_vip", dsi_host_top_0.slave_ram.inst.IF);
 slave_agent_pix_rd = new("axi4_slave_vip_rd", dsi_host_top_0.slave_ro.inst.IF);
 slave_agent_pix_wr = new("axi4_slave_vip_wr", dsi_host_top_0.slave_wo.inst.IF);
+slave_agent.set_verbosity(400);
+slave_agent_pix_rd.set_verbosity(400);
+slave_agent_pix_wr.set_verbosity(400);
 slave_agent.start_slave();
 slave_agent_pix_rd.start_slave();
 slave_agent_pix_wr.start_slave();
@@ -268,6 +271,7 @@ task rd_response();
     integer trans_addr;
     logic [7:0] trans_data[3:0];
     integer i;
+    xil_axi_payload_byte             beat[];
 
     forever begin
         // Block till write transaction occurs
@@ -276,17 +280,20 @@ task rd_response();
         trans_len = rd_reactive.get_len();
         trans_addr = rd_reactive.get_addr();
 
-        for(i = 0; i < 4; i++) begin
-            trans_data[i] = ram_memory[trans_addr/4][i*8+:8];
+        beat = new[(1<<rd_reactive.get_size())];
+
+        for(i = 0; i < 4; i = i + 1) begin
+            beat[i] = ram_memory[trans_addr/4][i*8+:8];
         end
 
         $display("\n/********* RAM->CPU AXI READ TRANSACTION ********/\n");
         $display("Len = %d\n", trans_len);
         $display("Addr = %h\n", trans_addr);
-        $display("Read data = %h\n", ram_memory[trans_addr/4]);
+        // $display("Read data = %h\n", ram_memory[trans_addr/4]);
+        $display("Read data from ram = %h\n", ram_memory[trans_addr/4]);
         $display("/****************************************/\n");
 
-        rd_reactive.set_data_beat_unpacked(rd_reactive.get_beat_index(),trans_data);
+        rd_reactive.set_data_beat_unpacked(rd_reactive.get_beat_index(),beat);
         rd_reactive.clr_beat_index();
 
         rd_reactive.set_beat_delay(0,$urandom_range(0,10));
@@ -377,6 +384,7 @@ task rd_pix_response();
     integer trans_addr;
     logic [7:0] trans_data[3:0];
     integer i;
+    xil_axi_payload_byte             beat[];
 
     forever begin
         // Block till write transaction occurs

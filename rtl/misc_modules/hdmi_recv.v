@@ -40,7 +40,7 @@ module hdmi_recv #(
     output wire             mst_axi_bready          ,
 
     /********* MM iface *********/
-    input   wire [4:0]      ctrl_address            ,
+    input   wire [7:0]      ctrl_address            ,
     input   wire            ctrl_read               ,
     output  wire [31:0]     ctrl_readdata           ,
     output  wire [1:0]      ctrl_response           ,
@@ -61,16 +61,16 @@ assign mst_axi_bready   = 1'b1;
 assign mst_axi_bid      = 0;
 assign mst_axi_wid      = 0;
 
-localparam REGISTERS_NUMBER     = 6;
-localparam CTRL_ADDR_WIDTH      = 4;
+localparam REGISTERS_NUMBER     = 7;
+localparam CTRL_ADDR_WIDTH      = 8;
 localparam MEMORY_MAP           = {
-                                    4'h18,
-                                    4'h14,
-                                    4'h10,
-                                    4'h0C,
-                                    4'h08,
-                                    4'h04,
-                                    4'h00
+                                    8'h18,
+                                    8'h14,
+                                    8'h10,
+                                    8'h0C,
+                                    8'h08,
+                                    8'h04,
+                                    8'h00
                                     };
 
 wire [REGISTERS_NUMBER - 1 : 0] sys_read_req;
@@ -118,8 +118,6 @@ avalon_mm_manager  #(
 
 assign sys_read_resp = 2'b00;
 assign sys_write_ready = 1'b1;
-assign sys_read_ready = 1'b1;
-assign sys_read_data = 'b0;
 
 reg [24-1:0] start_addr;
 reg dma_enable;
@@ -182,13 +180,13 @@ wire  [31:0]    reg_read;
 reg  [31:0]     reg_read_reg;
 reg             read_ack;
 
-always @(posedge clk or negedge rst_n)
-    if(!rst_n)      reg_read_reg <= 32'b0;
-    else            reg_read_reg <= reg_read;
+always @(posedge clk_sys or negedge rst_sys_n)
+    if(!rst_sys_n)      reg_read_reg <= 32'b0;
+    else                reg_read_reg <= reg_read;
 
-always @(posedge clk or negedge rst_n)
-    if(!rst_n)      read_ack <= 1'b0;
-    else            read_ack <= |sys_read_req & (!read_ack);
+always @(posedge clk_sys or negedge rst_sys_n)
+    if(!rst_sys_n)      read_ack <= 1'b0;
+    else                read_ack <= |sys_read_req & (!read_ack);
 
 assign sys_read_data    = reg_read_reg;
 assign sys_read_ready   = read_ack;
@@ -345,14 +343,14 @@ always @(posedge hdmi_clk or negedge hdmi_rst_n) begin
 end
 
 always @(posedge hdmi_clk or negedge hdmi_rst_n) begin
-    if(!hdmi_rst_n)                         pix_cnt_presync <= 'b0;
-    else if(reset_clock_counter)            pix_cnt_presync <= fps_cnt_curr;
+    if(!hdmi_rst_n)                         fps_cnt_presync <= 'b0;
+    else if(reset_clock_counter)            fps_cnt_presync <= fps_cnt_curr;
 end
 
 always @(posedge hdmi_clk or negedge hdmi_rst_n) begin
     if(!hdmi_rst_n)                                                         fps_cnt_curr <= 'b0;
     else if(reset_clock_counter)                                            fps_cnt_curr <= 0;
-    else if((vs_line_resync[2] ^ vs_line_resync[3]) & vs_line_resync[2])    fps_cnt_curr <= pix_cnt_curr + 1;
+    else if((vs_line_resync[2] ^ vs_line_resync[3]) & vs_line_resync[2])    fps_cnt_curr <= fps_cnt_curr + 1;
 end
 
 /*END*/

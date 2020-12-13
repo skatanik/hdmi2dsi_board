@@ -19,6 +19,10 @@ typedef struct
     uint32_t destination_addr_reg;
     uint32_t pixels_number_reg;
     uint32_t control_reg;
+    uint32_t reg_hs_cnt     ;
+    uint32_t reg_vs_cnt     ;
+    uint32_t reg_frames_cnt ;
+    uint32_t reg_pix_cnt    ;
 }td_hdmi_recv_struct;
 
 typedef struct
@@ -56,6 +60,7 @@ int main(void)
 
 
     volatile uint32_t y;
+    volatile uint32_t z;
 
     WRITE_REG(OUTPORT, 0x1234);
 
@@ -75,6 +80,15 @@ int main(void)
 
     HDMI_RECV->destination_addr_reg = 0x0010000;
     HDMI_RECV->pixels_number_reg = 640*480;
+
+    z = 0x12345678;
+
+    WRITE_REG(0x10000010, z);
+
+    z = HDMI_RECV->pixels_number_reg;
+
+    WRITE_REG(OUTPORT, z);
+    WRITE_REG(OUTPORT, z);
 
     HDMI_RECV->control_reg = 1;
 
