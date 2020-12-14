@@ -16,30 +16,31 @@
 
 typedef struct
 {
-    uint32_t destination_addr_reg;
-    uint32_t pixels_number_reg;
-    uint32_t control_reg;
-    uint32_t reg_hs_cnt     ;
-    uint32_t reg_vs_cnt     ;
-    uint32_t reg_frames_cnt ;
-    uint32_t reg_pix_cnt    ;
+    volatile uint32_t destination_addr_reg;
+    volatile uint32_t pixels_number_reg;
+    volatile uint32_t control_reg;
+    volatile uint32_t reg_hs_cnt     ;
+    volatile uint32_t reg_vs_cnt     ;
+    volatile uint32_t reg_frames_cnt ;
+    volatile uint32_t reg_pix_cnt    ;
+    volatile uint32_t reg_sr    ;
 }td_hdmi_recv_struct;
 
 typedef struct
 {
-    uint32_t destination_addr_reg;
-    uint32_t words_number_reg;
-    uint32_t control_reg;
+    volatile uint32_t source_addr_reg;
+    volatile uint32_t words_number_reg;
+    volatile uint32_t control_reg;
 }td_axi2stream_struct;
 
 typedef struct
 {
-    uint32_t dsi_reg_cr;
-    uint32_t dsi_reg_isr;
-    uint32_t dsi_reg_ier;
-    uint32_t dsi_reg_tr1;
-    uint32_t dsi_reg_tr2;
-    uint32_t dsi_reg_cmd;
+    volatile uint32_t dsi_reg_cr;
+    volatile uint32_t dsi_reg_isr;
+    volatile uint32_t dsi_reg_ier;
+    volatile uint32_t dsi_reg_tr1;
+    volatile uint32_t dsi_reg_tr2;
+    volatile uint32_t dsi_reg_cmd;
 }td_dsi_struct;
 
 
@@ -81,6 +82,9 @@ int main(void)
     HDMI_RECV->destination_addr_reg = 0x0010000;
     HDMI_RECV->pixels_number_reg = 640*480;
 
+    PIX_READER->source_addr_reg = 0x0010000;
+    PIX_READER->words_number_reg = 640*480*3 >> 2;
+
     z = 0x12345678;
 
     WRITE_REG(0x10000010, z);
@@ -88,11 +92,15 @@ int main(void)
     z = HDMI_RECV->pixels_number_reg;
 
     WRITE_REG(OUTPORT, z);
-    WRITE_REG(OUTPORT, z);
+    // WRITE_REG(OUTPORT, z);
 
     HDMI_RECV->control_reg = 1;
 
     WRITE_REG(0x11000000, 0x1); // run external hdmi
+
+    while((HDMI_RECV->reg_sr & 0x00000001) != 1) {};
+
+    PIX_READER->control_reg = 1;
 
   return 0;
 }

@@ -1,3 +1,5 @@
+`default_nettype none
+
 module hdmi_recv #(
     parameter BURST_SIZE = 128,
     parameter MAX_OUTSTANDING_TR = 1
@@ -61,9 +63,10 @@ assign mst_axi_bready   = 1'b1;
 assign mst_axi_bid      = 0;
 assign mst_axi_wid      = 0;
 
-localparam REGISTERS_NUMBER     = 7;
+localparam REGISTERS_NUMBER     = 8;
 localparam CTRL_ADDR_WIDTH      = 8;
 localparam MEMORY_MAP           = {
+                                    8'h1C,
                                     8'h18,
                                     8'h14,
                                     8'h10,
@@ -123,6 +126,9 @@ reg [24-1:0] start_addr;
 reg dma_enable;
 reg reg_fifo_full;
 reg reg_write_start_addr;
+wire [31:0] w_reg_sr;
+reg reg_vs_recv;
+
 reg [26-1:0] reg_pixel_number;
 reg [27-1:0] reg_words_number;
 reg [27-1:0] reg_words_cnt;
@@ -135,13 +141,17 @@ wire [32-1:0] w_hs_cnt;
 wire [32-1:0] w_vs_cnt;
 wire [32-1:0] w_frames_cnt;
 wire [32-1:0] w_pix_cnt;
+wire          w_vs_recv;
+reg           w_vs_recv_del;
+
+assign w_reg_sr = {31'b0, reg_vs_recv};
 
 always @(posedge clk_sys or negedge rst_sys_n) begin
     if(!rst_sys_n)  begin
         reg_hs_cnt          <= 'b0;
         reg_vs_cnt          <= 'b0;
         reg_frames_cnt      <= 'b0;
-        reg_pix_cnt      <= 'b0;
+        reg_pix_cnt         <= 'b0;
     end else begin
         reg_hs_cnt          <= w_hs_cnt;
         reg_vs_cnt          <= w_vs_cnt;
@@ -153,6 +163,11 @@ end
 always @(posedge clk_sys or negedge rst_sys_n) begin
     if(!rst_sys_n)              start_addr <= 'b0;
     else if(sys_write_req[0])   start_addr <= sys_write_data;
+end
+
+always @(posedge clk_sys or negedge rst_sys_n) begin
+    if(!rst_sys_n)              w_vs_recv_del <= 'b0;
+    else                        w_vs_recv_del <= w_vs_recv;
 end
 
 always @(posedge clk_sys or negedge rst_sys_n) begin
@@ -176,6 +191,12 @@ always @(posedge clk_sys or negedge rst_sys_n) begin
     else                        reg_words_number <= (reg_pixel_number*3) >> 2;
 end
 
+always @(posedge clk_sys or negedge rst_sys_n) begin
+    if(!rst_sys_n)                                              reg_vs_recv <= 'b0;
+    else if((w_vs_recv^w_vs_recv_del)&w_vs_recv_del)            reg_vs_recv <= 1;
+    else if(sys_read_req[7])                                    reg_vs_recv <= 0;
+end
+
 wire  [31:0]    reg_read;
 reg  [31:0]     reg_read_reg;
 reg             read_ack;
@@ -191,13 +212,14 @@ always @(posedge clk_sys or negedge rst_sys_n)
 assign sys_read_data    = reg_read_reg;
 assign sys_read_ready   = read_ack;
 assign sys_read_resp    = 2'b0;
-assign reg_read         =   ({32{sys_read_req[0]}}          & {8'b0,start_addr          })          |
-                            ({32{sys_read_req[1]}}          & {6'b0,reg_pixel_number    })          |
-                            ({32{sys_read_req[2]}}          & {31'b0, dma_enable        })          |
-                            ({32{sys_read_req[3]}}          & reg_hs_cnt                 )          |
-                            ({32{sys_read_req[4]}}          & reg_vs_cnt                 )          |
-                            ({32{sys_read_req[5]}}          & reg_frames_cnt             )          |
-                            ({32{sys_read_req[6]}}          & reg_pix_cnt               );
+assign reg_read         =   ({32{sys_read_req[0]}}          & {8'b0,start_addr          }   )          |
+                            ({32{sys_read_req[1]}}          & {6'b0,reg_pixel_number    }   )          |
+                            ({32{sys_read_req[2]}}          & {31'b0, dma_enable        }   )          |
+                            ({32{sys_read_req[3]}}          & reg_hs_cnt                    )          |
+                            ({32{sys_read_req[4]}}          & reg_vs_cnt                    )          |
+                            ({32{sys_read_req[5]}}          & reg_frames_cnt                )          |
+                            ({32{sys_read_req[6]}}          & reg_pix_cnt                   )          |
+                            ({32{sys_read_req[7]}}          & w_reg_sr                      );
 
 /* latching input data */
 reg [23:0] data_line_resync [4:0];
@@ -245,12 +267,16 @@ wire cdc_ready_0;
 wire cdc_ready_1;
 wire cdc_ready_2;
 wire cdc_ready_3;
+wire cdc_ready_4;
 
 reg [31:0] hs_cnt_presync;
 reg [31:0] vs_cnt_presync;
 reg [31:0] fps_cnt_presync;
 reg [31:0] pix_cnt_presync;
 reg [31:0] fps_cnt_curr;
+reg [31:0] hs_cnt_curr;
+reg [31:0] vs_cnt_curr;
+reg [31:0] pix_cnt_curr;
 
 feedback_cdc_sync #(
     .WIDTH(32)
@@ -312,22 +338,61 @@ feedback_cdc_sync #(
     .dest_data         (w_pix_cnt    )
 );
 
+reg reg_vs_recv_save;
+
+always @(posedge hdmi_clk or negedge hdmi_rst_n) begin
+    if(!hdmi_rst_n)                                                         reg_vs_recv_save <= 1'b0;
+    else if((vs_line_resync[2] ^ vs_line_resync[3]) & vs_line_resync[3])    reg_vs_recv_save <= 1'b1;
+    else if(cdc_ready_4)                                                    reg_vs_recv_save <= 1'b0;
+
+end
+
+feedback_cdc_sync #(
+    .WIDTH(1)
+) vs_strobe_cdc (
+    .clk_src           (hdmi_clk         ),    // Clock of source domain
+    .rst_n_src         (hdmi_rst_n       ),    // reset of source domain
+    .clk_dest          (clk_sys          ),    // Clock of destination domain
+    .rst_n_dest        (rst_sys_n        ),    // reset of destination domain
+
+    .src_data          (reg_vs_recv_save ),
+    .src_write         (cdc_ready_4      ),
+    .src_ready         (cdc_ready_4      ),
+
+    .dest_data         (w_vs_recv    )
+);
+
+always @(posedge hdmi_clk or negedge hdmi_rst_n) begin
+    if(!hdmi_rst_n)                                                         hs_cnt_curr <= 'b0;
+    else if((hs_line_resync[2] ^ hs_line_resync[3]) & hs_line_resync[2])    hs_cnt_curr <= 0;
+    else if(de_line_resync[2])                                              hs_cnt_curr <= hs_cnt_curr + 1;
+end
+
+always @(posedge hdmi_clk or negedge hdmi_rst_n) begin
+    if(!hdmi_rst_n)                                                         vs_cnt_curr <= 'b0;
+    else if((vs_line_resync[2] ^ vs_line_resync[3]) & vs_line_resync[2])    vs_cnt_curr <= 0;
+    else if((hs_line_resync[2] ^ hs_line_resync[3]) & hs_line_resync[2])    vs_cnt_curr <= vs_cnt_curr + 1;
+end
+
+always @(posedge hdmi_clk or negedge hdmi_rst_n) begin
+    if(!hdmi_rst_n)                                                         pix_cnt_curr <= 'b0;
+    else if((vs_line_resync[2] ^ vs_line_resync[3]) & vs_line_resync[2])    pix_cnt_curr <= 0;
+    else if(de_line_resync[2])                                              pix_cnt_curr <= pix_cnt_curr + 1;
+end
+
 always @(posedge hdmi_clk or negedge hdmi_rst_n) begin
     if(!hdmi_rst_n)                                                         hs_cnt_presync <= 'b0;
-    else if((hs_line_resync[2] ^ hs_line_resync[3]) & hs_line_resync[2])    hs_cnt_presync <= 0;
-    else if(de_line_resync[2])                                              hs_cnt_presync <= hs_cnt_presync + 1;
+    else if((hs_line_resync[2] ^ hs_line_resync[3]) & hs_line_resync[2])    hs_cnt_presync <= hs_cnt_curr;
 end
 
 always @(posedge hdmi_clk or negedge hdmi_rst_n) begin
     if(!hdmi_rst_n)                                                         vs_cnt_presync <= 'b0;
-    else if((vs_line_resync[2] ^ vs_line_resync[3]) & vs_line_resync[2])    vs_cnt_presync <= 0;
-    else if((hs_line_resync[2] ^ hs_line_resync[3]) & hs_line_resync[2])    vs_cnt_presync <= vs_cnt_presync + 1;
+    else if((vs_line_resync[2] ^ vs_line_resync[3]) & vs_line_resync[2])    vs_cnt_presync <= vs_cnt_curr;
 end
 
 always @(posedge hdmi_clk or negedge hdmi_rst_n) begin
     if(!hdmi_rst_n)                                                         pix_cnt_presync <= 'b0;
-    else if((vs_line_resync[2] ^ vs_line_resync[3]) & vs_line_resync[2])    pix_cnt_presync <= 0;
-    else if(de_line_resync[2])                                              pix_cnt_presync <= pix_cnt_presync + 1;
+    else if((vs_line_resync[2] ^ vs_line_resync[3]) & vs_line_resync[2])    pix_cnt_presync <= pix_cnt_curr;
 end
 
 localparam ONE_SEC_HDMI_CLOCK_NUMBER = 100000000;
@@ -390,10 +455,12 @@ assign fifo_write = (byte_shift_0 != 2'd2) && de_line_resync[5] && de_line_resyn
 
 wire w_fifo_empty;
 wire w_fifo_full;
+wire w_fifo_read;
 wire [31:0] w_fifo_data_out;
 wire [9:0]  w_rd_data_count;
-
 reg                     r_mst_axi_awvalid;
+
+assign w_fifo_read = mst_axi_wready && mst_axi_wvalid;
 
 hdmi_data_fifo hdmi_data_fifo_0(
     .rst                (!rst_sys_n                             ),
@@ -401,7 +468,7 @@ hdmi_data_fifo hdmi_data_fifo_0(
     .rd_clk             (clk_sys                                ),
     .din                (hdmi_data_repack_2                     ),
     .wr_en              (fifo_write                             ),
-    .rd_en              (mst_axi_wready &&  mst_axi_wvalid      ),
+    .rd_en              (w_fifo_read                            ),
     .dout               (w_fifo_data_out                        ),
     .full               (w_fifo_full                            ),
     .empty              (w_fifo_empty                           ),
@@ -436,7 +503,7 @@ end
 
 wire send_aw_trans;
 
-assign send_aw_trans = (r_transaction_counter < MAX_OUTSTANDING_TR) && (w_rd_data_count >= BURST_SIZE);
+assign send_aw_trans = (r_transaction_counter < MAX_OUTSTANDING_TR) && (w_rd_data_count >= BURST_SIZE-2);
 
 always @(posedge clk_sys or negedge rst_sys_n) begin
     if(!rst_sys_n)                                                                  r_transaction_counter <= 'b0;
@@ -482,3 +549,5 @@ assign mst_axi_awlen        = BURST_SIZE-1; //r_mst_axi_awlen;
 assign mst_axi_awvalid      = r_mst_axi_awvalid;
 
 endmodule
+
+`default_nettype wire

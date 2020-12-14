@@ -55,6 +55,15 @@ logic [7:0] video_memory_send [640*480*3-1:0]; //
 logic [7:0] video_memory_recv [640*480*3-1:0]; //
 integer recv_vid_ind;
 
+initial
+begin
+    for(int ind = 0; ind < 640*480*3; ind++)
+    begin
+        video_memory_send[ind] = $urandom_range(0, 8'hff);
+        video_memory_recv[ind] = 0;
+    end
+end
+
 reg r_clk_25;
 reg r_rst_n;
 
@@ -97,7 +106,7 @@ localparam VS_BP_SIZE = 50;
 localparam HS_FULL_SIZE = 540;
 localparam HS_FP_SIZE = 20;
 localparam HS_BP_SIZE = 20;
-localparam DE_FULL_SIZE = 540;
+localparam DE_FULL_SIZE = 500;
 localparam DE_FP_SIZE = 10;
 localparam DE_BP_SIZE = 10;
 
@@ -218,8 +227,8 @@ slave_agent = new("axi4_slave_vip", dsi_host_top_0.slave_ram.inst.IF);
 slave_agent_pix_rd = new("axi4_slave_vip_rd", dsi_host_top_0.slave_ro.inst.IF);
 slave_agent_pix_wr = new("axi4_slave_vip_wr", dsi_host_top_0.slave_wo.inst.IF);
 slave_agent.set_verbosity(400);
-slave_agent_pix_rd.set_verbosity(400);
-slave_agent_pix_wr.set_verbosity(400);
+// slave_agent_pix_rd.set_verbosity(400);
+// slave_agent_pix_wr.set_verbosity(400);
 slave_agent.start_slave();
 slave_agent_pix_rd.start_slave();
 slave_agent_pix_wr.start_slave();
@@ -355,7 +364,7 @@ task wr_pix_response();
             //     end
             // end
 
-            if(given_data != trans_data) begin
+            if(given_data !== trans_data) begin
                 $display("Compare data error on addr %d\n", recv_vid_ind*4);
                 $display("%h != %h\n", given_data, trans_data);
                 $stop();
@@ -414,12 +423,13 @@ task rd_pix_response();
     end
 endtask
 
+integer vid_trn_num;
+
 task hdmi_streamer();
 
     integer vs_counter;
     integer hs_counter;
     integer de_counter;
-    integer vid_trn_num;
 
     vs_counter = 0;
     hs_counter = 0;
@@ -449,26 +459,25 @@ task hdmi_streamer();
                 de_counter = de_counter + 1;
             end
 
-            if(hs_counter >= HS_FP_SIZE && hs_counter < HS_FULL_SIZE - HS_BP_SIZE)
+            if(hs_counter >= HS_FP_SIZE && (hs_counter < HS_FULL_SIZE - HS_BP_SIZE))
                 hdmi_hs = 1;
             else
                 hdmi_hs = 0;
 
-            if(hs_counter >= HS_FP_SIZE+DE_FP_SIZE && hs_counter < HS_FULL_SIZE - DE_BP_SIZE - HS_BP_SIZE && hdmi_vs)
+            if((hs_counter >= HS_FP_SIZE+DE_FP_SIZE) && (hs_counter < HS_FULL_SIZE - DE_BP_SIZE - HS_BP_SIZE) && hdmi_vs)
                 hdmi_de = 1;
             else
                 hdmi_de = 0;
 
-            if(vs_counter >= VS_FP_SIZE && vs_counter < VS_FULL_SIZE - VS_BP_SIZE)
+            if(vs_counter >= VS_FP_SIZE && (vs_counter < VS_FULL_SIZE - VS_BP_SIZE))
                 hdmi_vs = 1;
             else
                 hdmi_vs = 0;
 
             if(hdmi_de == 1) begin
-                hdmi_data = $urandom_range(0, 24'hffffff);
-                video_memory_send[vid_trn_num*3+0] = hdmi_data[7:0];
-                video_memory_send[vid_trn_num*3+1] = hdmi_data[15:8];
-                video_memory_send[vid_trn_num*3+2] = hdmi_data[23:16];
+                hdmi_data[7:0] = video_memory_send[vid_trn_num*3+0];
+                hdmi_data[15:8] = video_memory_send[vid_trn_num*3+1];
+                hdmi_data[23:16] = video_memory_send[vid_trn_num*3+2];
                 vid_trn_num = vid_trn_num + 1;
             end
             else
@@ -494,20 +503,21 @@ function automatic void check_hdmi_ram_mem();
     error_count = 0;
     for(ind = 0; ind < 640*480*3; ind = ind + 1)
     begin
-        if(video_memory_recv[ind] != video_memory_send[ind])
+        if(video_memory_recv[ind] !== video_memory_send[ind])
         begin
-            $display("\nCompare data error on addr %d", ind);
+            if(error_count < 10)
+                $display("\nCompare data error on addr %d", ind);
             error_count = error_count + 1;
         end
     end
 
-     $display("\nCompare data errors number %d", error_count);
+    $display("\nCompare data errors number %d", error_count);
     if(error_count == 0)
         $display("\n HDMI-> RAM Test Passed");
     else
         $display("\n HDMI-> RAM Test Failed");
 
-    $stop();
+    // $stop();
 
 endfunction
 
