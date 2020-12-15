@@ -1011,7 +1011,7 @@ hdmi_recv hdmi_recv_0(
 axi_to_stream_dma #(
     .ADDR_WIDTH(24),
     .BURST_SIZE(128),
-    .MAX_PENDING_RQST_LOG(2)
+    .MAX_OUTSTANDING_TR(16)
 )axi_to_stream_dma_0(
     .clk                            (sys_clk                ),
     .rst_n                          (sys_rst_n              ),
