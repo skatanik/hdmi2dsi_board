@@ -98,9 +98,20 @@ int main(void)
 
     WRITE_REG(0x11000000, 0x1); // run external hdmi
 
-    while((HDMI_RECV->reg_sr & 0x00000001) != 1) {};
+    // run clk
+    DSI->dsi_reg_cr |= 0x00000002;
+    while(!(DSI->dsi_reg_isr & 0x00000002)) {};
+
+    // run lanes
+    DSI->dsi_reg_cr |= 0x00000004;
+    while(!(DSI->dsi_reg_isr & 0x00000004)) {};
+
+
+    while(!(HDMI_RECV->reg_sr & 0x00000001)) {};
 
     PIX_READER->control_reg = 1;
+    // run assembler
+    DSI->dsi_reg_cr |= 0x00000001;
 
   return 0;
 }

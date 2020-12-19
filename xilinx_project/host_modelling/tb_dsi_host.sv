@@ -343,7 +343,7 @@ task wr_pix_response();
 
             trans_data = wr_reactive.get_data_beat(ind_mem);
             // $display("Data = %h\n", trans_data);
-            ram_memory[(trans_addr+ind_mem)/4] = trans_data;
+            ram_memory[(trans_addr)/4+ind_mem] = trans_data;
 
             video_memory_recv[(recv_vid_ind)*4+0] = trans_data[8*0+:8];
             video_memory_recv[(recv_vid_ind)*4+1] = trans_data[8*1+:8];
@@ -393,7 +393,6 @@ task rd_pix_response();
     integer trans_addr;
     logic [7:0] trans_data[3:0];
     integer i;
-    xil_axi_payload_byte             beat[];
 
     forever begin
         // Block till write transaction occurs
@@ -402,20 +401,26 @@ task rd_pix_response();
         trans_len = rd_reactive.get_len();
         trans_addr = rd_reactive.get_addr();
 
-        for(i = 0; i < 4; i++) begin
-            trans_data[i] = ram_memory[trans_addr/4][i*8+:8];
-        end
-
         $display("\n/********* RAM->DSI AXI READ TRANSACTION ********/\n");
         $display("Len = %d\n", trans_len);
         $display("Addr = %h\n", trans_addr);
         $display("Read data = %h\n", ram_memory[trans_addr/4]);
+
+        for(int ind_1 = 0; ind_1 <= trans_len; ind_1++) begin
+            for(i = 0; i < 4; i++) begin
+                trans_data[i] = ram_memory[trans_addr/4+ind_1][i*8+:8];
+            end
+            rd_reactive.set_data_beat_unpacked(rd_reactive.get_beat_index(),trans_data);
+            rd_reactive.increment_beat_index();
+            rd_reactive.set_beat_delay(ind_1,0); // $urandom_range(0,10)
+        end
+
         $display("/****************************************/\n");
 
-        rd_reactive.set_data_beat_unpacked(rd_reactive.get_beat_index(),trans_data);
+
         rd_reactive.clr_beat_index();
 
-        rd_reactive.set_beat_delay(0,$urandom_range(0,10));
+
 
         // rd_reactive.set_data_beat(0, trans_data, 1, 4'h1111);
         // Write driver send response to VIP interface
