@@ -207,7 +207,7 @@ axi4_slave_vip_slv_t slave_agent;
 axi4_slave_vip_slv_t slave_agent_pix_rd;
 axi4_slave_vip_slv_t slave_agent_pix_wr;
 
-localparam RAM_MEM_DEPTH = 2**(18-2);
+localparam RAM_MEM_DEPTH = 2**(18);
 
 logic [31:0] ram_memory [RAM_MEM_DEPTH-1:0];
 integer ind;
@@ -257,11 +257,11 @@ task wr_response();
         trans_len = wr_reactive.get_len();
         trans_addr = wr_reactive.get_addr();
         trans_data = wr_reactive.get_data_beat(0);
-        $display("\n/********* CPU->RAM AXI WRITE TRANSACTION ********/\n");
-        $display("Len = %d\n", trans_len);
-        $display("Addr = %h\n", trans_addr);
-        $display("Data = %h\n", trans_data);
-        $display("/****************************************/\n");
+        // $display("\n/********* CPU->RAM AXI WRITE TRANSACTION ********/\n");
+        // $display("Len = %d\n", trans_len);
+        // $display("Addr = %h\n", trans_addr);
+        // $display("Data = %h\n", trans_data);
+        // $display("/****************************************/\n");
 
         ram_memory[trans_addr/4] = trans_data;
 
@@ -295,12 +295,12 @@ task rd_response();
             beat[i] = ram_memory[trans_addr/4][i*8+:8];
         end
 
-        $display("\n/********* RAM->CPU AXI READ TRANSACTION ********/\n");
-        $display("Len = %d\n", trans_len);
-        $display("Addr = %h\n", trans_addr);
-        // $display("Read data = %h\n", ram_memory[trans_addr/4]);
-        $display("Read data from ram = %h\n", ram_memory[trans_addr/4]);
-        $display("/****************************************/\n");
+        // $display("\n/********* RAM->CPU AXI READ TRANSACTION ********/\n");
+        // $display("Len = %d\n", trans_len);
+        // $display("Addr = %h\n", trans_addr);
+        // // $display("Read data = %h\n", ram_memory[trans_addr/4]);
+        // $display("Read data from ram = %h\n", ram_memory[trans_addr/4]);
+        // $display("/****************************************/\n");
 
         rd_reactive.set_data_beat_unpacked(rd_reactive.get_beat_index(),beat);
         rd_reactive.clr_beat_index();
@@ -334,9 +334,9 @@ task wr_pix_response();
         slave_agent_pix_wr.wr_driver.get_wr_reactive (wr_reactive);
         trans_len = wr_reactive.get_len();
         trans_addr = wr_reactive.get_addr();
-        $display("\n/********* HDMI->RAM AXI WRITE TRANSACTION ********/\n");
-        $display("Len = %d\n", trans_len);
-        $display("Addr = %h\n", trans_addr);
+        // $display("\n/********* HDMI->RAM AXI WRITE TRANSACTION ********/\n");
+        // $display("Len = %d\n", trans_len);
+        // $display("Addr = %h\n", trans_addr);
 
 
         for(ind_mem = 0; ind_mem <= trans_len; ind_mem = ind_mem + 1 ) begin
@@ -376,7 +376,7 @@ task wr_pix_response();
             recv_vid_ind = recv_vid_ind + 1;
 
         end
-        $display("/****************************************/\n");
+        // $display("/****************************************/\n");
 
         // User fill in write response
         fill_wr_reactive                (wr_reactive);
@@ -401,10 +401,10 @@ task rd_pix_response();
         trans_len = rd_reactive.get_len();
         trans_addr = rd_reactive.get_addr();
 
-        $display("\n/********* RAM->DSI AXI READ TRANSACTION ********/\n");
-        $display("Len = %d\n", trans_len);
-        $display("Addr = %h\n", trans_addr);
-        $display("Read data = %h\n", ram_memory[trans_addr/4]);
+        // $display("\n/********* RAM->DSI AXI READ TRANSACTION ********/\n");
+        // $display("Len = %d\n", trans_len);
+        // $display("Addr = %h\n", trans_addr);
+        // $display("Read data = %h\n", ram_memory[trans_addr/4]);
 
         for(int ind_1 = 0; ind_1 <= trans_len; ind_1++) begin
             for(i = 0; i < 4; i++) begin
@@ -415,7 +415,7 @@ task rd_pix_response();
             rd_reactive.set_beat_delay(ind_1,0); // $urandom_range(0,10)
         end
 
-        $display("/****************************************/\n");
+        // $display("/****************************************/\n");
 
 
         rd_reactive.clr_beat_index();
@@ -523,6 +523,241 @@ function automatic void check_hdmi_ram_mem();
         $display("\n HDMI-> RAM Test Failed");
 
     // $stop();
+
+endfunction
+
+typedef enum {
+    DSI_STATE_LP01_WAIT,
+    DSI_STATE_LP00_WAIT,
+    DSI_STATE_SYNC_WAIT,
+    DSI_STATE_BYTE_WAIT,
+    DSI_STATE_DATA_RECV,
+    DSI_STATE_CRC_WAIT,
+    DSI_STATE_EOT_WAIT
+} dsi_lane_recv_states_td;
+
+mailbox lane_mailbox[3:0];
+
+initial
+begin
+    for(int ind = 0; ind < 4; ind++)
+        lane_mailbox[ind] = new();
+
+    fork
+        dsi_receiver_lane(0);
+        dsi_receiver_lane(1);
+        dsi_receiver_lane(2);
+        dsi_receiver_lane(3);
+        dsi_receiver_checker();
+    join_none
+end
+
+task automatic dsi_receiver_lane;
+    input integer task_ind;
+
+    dsi_lane_recv_states_td current_state;
+    logic [1:0] lp_lanes;
+    logic [7:0] data_byte;
+    logic first_byte;
+    logic last_byte;
+
+    current_state = DSI_STATE_LP01_WAIT;
+    lp_lanes = 2'b0;
+    data_byte = 0;
+    first_byte  = 0;
+    last_byte   = 0;
+
+    forever begin
+        repeat(1) @(posedge dsi_host_top_0.dsi_phy_clk);
+
+
+        lp_lanes = {dsi_host_top_0.dsi_tx_top_0.LP_p_output[task_ind], dsi_host_top_0.dsi_tx_top_0.LP_n_output[task_ind]};
+        data_byte = dsi_host_top_0.dsi_tx_top_0.hs_lane_output_bus[task_ind*8+:8];
+
+        case (current_state)
+            DSI_STATE_LP01_WAIT:
+                current_state = lp_lanes == 2'b01 ? DSI_STATE_LP00_WAIT : DSI_STATE_LP01_WAIT;
+            DSI_STATE_LP00_WAIT:
+                current_state = lp_lanes == 2'b00 ? DSI_STATE_SYNC_WAIT : DSI_STATE_LP00_WAIT;
+            DSI_STATE_SYNC_WAIT: begin
+                first_byte = (data_byte == 8'h1D);
+                if(first_byte) begin
+                    current_state = DSI_STATE_BYTE_WAIT;
+                    // $display("Lane %d SYNC received\n",task_ind);
+                end else
+                    current_state = DSI_STATE_SYNC_WAIT;
+            end
+            DSI_STATE_BYTE_WAIT: begin
+                last_byte = (lp_lanes == 2'b11);
+                if(last_byte)
+                    // $display("Last Byte on lane %d received\n",task_ind);
+                // $display("Byte %h on lane %d received, flags %b\n",data_byte,task_ind, {first_byte, last_byte});
+                current_state = last_byte ? DSI_STATE_LP01_WAIT : DSI_STATE_BYTE_WAIT;
+                lane_mailbox[task_ind].put({first_byte, last_byte, data_byte});
+                first_byte = 0;
+                last_byte = 0;
+            end
+        endcase
+
+    end
+endtask
+
+logic [7:0] dsi_recv_array [2048-1:0];
+
+task dsi_receiver_checker();
+
+    logic [31:0] recv_word;
+    logic [9:0] recv_chunk;
+    logic [7:0] recv_chunk_inv;
+
+    logic wait_first_chunk;
+    logic wait_last_chunk;
+    integer first_chunk_counter;
+    integer last_chunk_counter;
+    integer bytes_counter;
+    integer words_counter;
+    logic [1:0] lp_lanes;
+
+    wait_first_chunk = 1;
+    wait_last_chunk = 0;
+    first_chunk_counter = 0;
+    last_chunk_counter = 0;
+
+    bytes_counter = 0;
+    words_counter = 0;
+
+    forever
+    begin
+        repeat(1) @(negedge dsi_host_top_0.dsi_phy_clk);
+
+        lane_mailbox[0].peek(recv_chunk);
+
+        for(int ind = 0; ind < 4; ind++) begin
+            lp_lanes = {dsi_host_top_0.dsi_tx_top_0.LP_p_output[ind], dsi_host_top_0.dsi_tx_top_0.LP_n_output[ind]};
+            if(lp_lanes == 2'b00)
+            begin
+                lane_mailbox[ind].get(recv_chunk);
+                // $display("Got %h chunk\n",recv_chunk);
+
+                for(int k=0; k < 8; k++)
+                    recv_chunk_inv[k] = recv_chunk[7-k];
+
+                dsi_recv_array[words_counter+ind] = recv_chunk_inv;
+                bytes_counter = bytes_counter + 1;
+
+                if(bytes_counter == 4)
+                begin
+                    bytes_counter = 0;
+                    words_counter = words_counter + 4;
+                end
+
+                if(recv_chunk[9]) begin
+                    first_chunk_counter = first_chunk_counter + 1;
+                    // $display("First chunk counter = %d\n",first_chunk_counter);
+                end
+
+                if(recv_chunk[8]) begin
+                    last_chunk_counter = last_chunk_counter + 1;
+                    // $display("Last chunk counter = %d\n",last_chunk_counter);
+                end
+
+            end
+        end
+
+        if(wait_first_chunk)
+            if(first_chunk_counter != 4)
+            begin
+                $display("Only %d sync received", first_chunk_counter);
+                $error();
+                $stop();
+            end else begin
+                wait_first_chunk = 0;
+                wait_last_chunk = 1;
+                first_chunk_counter = 0;
+                last_chunk_counter = 0;
+            end
+        else if(last_chunk_counter == 4 && wait_last_chunk)
+        begin
+            last_chunk_counter = 0;
+            wait_last_chunk = 0;
+            wait_first_chunk = 1;
+            first_chunk_counter = 0;
+            $display("Data packet received. Checking...");
+            dsi_data_check();
+            bytes_counter = 0;
+            words_counter = 0;
+        end
+
+    end
+
+endtask
+
+localparam [5:0] PT_SHORT_1 = 6'h01;
+localparam [5:0] PT_SHORT_2 = 6'h11;
+localparam [5:0] PT_SHORT_3 = 6'h21;
+localparam [5:0] PT_SHORT_4 = 6'h31;
+localparam [5:0] PT_SHORT_5 = 6'h07;
+localparam [5:0] PT_SHORT_6 = 6'h08;
+localparam [5:0] PT_SHORT_7 = 6'h02;
+localparam [5:0] PT_SHORT_8 = 6'h12;
+localparam [5:0] PT_SHORT_9 = 6'h22;
+localparam [5:0] PT_SHORT_10 = 6'h32;
+
+localparam [5:0] PT_LONG_1 = 6'h3E;
+
+
+function automatic void dsi_data_check();
+
+    case(dsi_recv_array[0])
+    PT_SHORT_1:
+        begin
+            $display("Received packet type PT_SHORT_1");
+        end
+    PT_SHORT_2:
+        begin
+            $display("Received packet type PT_SHORT_2");
+        end
+    PT_SHORT_3:
+        begin
+            $display("Received packet type PT_SHORT_3");
+        end
+    PT_SHORT_4:
+        begin
+            $display("Received packet type PT_SHORT_4");
+        end
+    PT_SHORT_5:
+        begin
+            $display("Received packet type PT_SHORT_5");
+        end
+    PT_SHORT_6:
+        begin
+            $display("Received packet type PT_SHORT_6");
+        end
+    PT_SHORT_7:
+        begin
+            $display("Received packet type PT_SHORT_7");
+        end
+    PT_SHORT_8:
+        begin
+            $display("Received packet type PT_SHORT_8");
+        end
+    PT_SHORT_9:
+        begin
+            $display("Received packet type PT_SHORT_9");
+        end
+    PT_SHORT_10:
+        begin
+            $display("Received packet type PT_SHORT_10");
+        end
+    PT_LONG_1:
+        begin
+            $display("Received packet type PT_LONG_1");
+        end
+    default:
+            $display("Unknown packet type");
+    endcase
+
+    $display("\n");
 
 endfunction
 

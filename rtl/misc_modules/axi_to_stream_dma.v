@@ -1,6 +1,6 @@
 module axi_to_stream_dma #(
     parameter ADDR_WIDTH = 24,
-    parameter BURST_SIZE = 128,
+    parameter BURST_SIZE = 64,
     parameter MAX_OUTSTANDING_TR = 1
 )(
     input   wire                               clk                         ,
@@ -108,14 +108,18 @@ reg [30-1:0] words_number;
 reg [30-1:0] words_number_cnt;
 reg dma_enable;
 wire addr_rst;
-reg [MAX_PENDING_RQST_LOG-1:0] request_counter;
 reg r_mst_axi_arvalid;
-wire request_counter_empty;
 wire rqst_enable;
 reg r_st_endofpacket;
 reg r_st_startofpacket;
-wire [32-1:0] transfers_number;
-reg [32-1:0] transfers_counter;
+reg [MAX_PENDING_RQST_LOG-1:0] transactions_counter;
+reg set_start_addr;
+
+always @(posedge clk or negedge rst_n) begin
+    if(!rst_n)                  set_start_addr <= 'b0;
+    else if(sys_write_req[0])   set_start_addr <= 1;
+    else                        set_start_addr <= 0;
+end
 
 always @(posedge clk or negedge rst_n) begin
     if(!rst_n)                  start_addr <= 'b0;
@@ -145,42 +149,37 @@ assign mst_axi_arvalid      = r_mst_axi_arvalid;
 assign st_data              = mst_axi_rdata;
 assign st_valid             = mst_axi_rvalid;
 assign mst_axi_rready       = st_ready;
-assign st_endofpacket       = r_st_endofpacket;
-assign st_startofpacket     = r_st_startofpacket;
-assign transfers_number     = words_number >> $clog2(BURST_SIZE);
+assign st_endofpacket       = mst_axi_rvalid && (words_number_cnt == (words_number - 1));
+assign st_startofpacket     = mst_axi_rvalid && (words_number_cnt == 0);
 assign mst_axi_araddr       = curr_addr;
 
-assign rqst_enable              = (transfers_counter < (MAX_OUTSTANDING_TR - 1));
-assign request_counter_empty    = (request_counter == 0);
-assign addr_rst                 = mst_axi_arready && mst_axi_arvalid && (transfers_counter >= (MAX_OUTSTANDING_TR - 1));
+assign rqst_enable              = (transactions_counter < (MAX_OUTSTANDING_TR - 2));
+assign addr_rst                 = mst_axi_arready && mst_axi_arvalid && (curr_addr >= (start_addr + (words_number<<2)));
 
 always @(posedge clk or negedge rst_n) begin
-    if(!rst_n)                                          transfers_counter <= 'b0;
-    else if(addr_rst)                                   transfers_counter <= 'b0;
-    else if(mst_axi_arready && r_mst_axi_arvalid)       transfers_counter <= transfers_counter + 1;
+    if(!rst_n)                                                                                                  transactions_counter <= 'b0;
+    else if(addr_rst)                                                                                           transactions_counter <= 'b0;
+    else if(mst_axi_arready && r_mst_axi_arvalid && mst_axi_rvalid && mst_axi_rready && mst_axi_rlast)          transactions_counter <= transactions_counter;
+    else if(mst_axi_arready && r_mst_axi_arvalid)                                                               transactions_counter <= transactions_counter + 1;
+    else if(mst_axi_rvalid && mst_axi_rready && mst_axi_rlast)                                                  transactions_counter <= transactions_counter - 1;
 end
 
 always @(posedge clk or negedge rst_n) begin
     if(!rst_n)                                          curr_addr <= 'b0;
+    else if(set_start_addr)                             curr_addr <= start_addr;
     else if(addr_rst)                                   curr_addr <= start_addr;
     else if(mst_axi_arready && r_mst_axi_arvalid)       curr_addr <= curr_addr + (BURST_SIZE*4);
 end
 
 always @(posedge clk or negedge rst_n) begin
-    if(!rst_n)                                              r_mst_axi_arvalid <= 1'b0;
-    else if(dma_enable && rqst_enable)                      r_mst_axi_arvalid <= 1'b1;
-    else if(mst_axi_arready && r_mst_axi_arvalid)           r_mst_axi_arvalid <= 1'b0;
-end
-
-always @(posedge clk or negedge rst_n) begin
-    if(!rst_n)                                                              request_counter <= 'b0;
-    else if(dma_enable && mst_axi_rready && rqst_enable)                    request_counter <= request_counter + 1;
-    else if(mst_axi_arready && !request_counter_empty && mst_axi_rlast)     request_counter <= request_counter - 1;
+    if(!rst_n)                                                      r_mst_axi_arvalid <= 1'b0;
+    else if(dma_enable && rqst_enable)                              r_mst_axi_arvalid <= 1'b1;
+    else if(!rqst_enable && mst_axi_arready && r_mst_axi_arvalid)   r_mst_axi_arvalid <= 1'b0;
 end
 
 always @(posedge clk or negedge rst_n) begin
     if(!rst_n)                                                                              words_number_cnt <= 'b0;
-    else if(mst_axi_rvalid && mst_axi_rready && (words_number_cnt == (words_number - 1)))   words_number_cnt <= 'b0;
+    else if(mst_axi_rvalid && mst_axi_rready && st_endofpacket)                             words_number_cnt <= 'b0;
     else if(mst_axi_rvalid && mst_axi_rready)                                               words_number_cnt <= words_number_cnt + 1;
 end
 

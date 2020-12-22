@@ -1057,12 +1057,12 @@ axi_to_stream_dma #(
 dsi_tx_top #(
     .LINE_WIDTH            (640),
     .BITS_PER_PIXEL        (8),
-    .BLANK_TIME            (8),
-    .BLANK_TIME_HBP_ACT    (8),
-    .VSA_LINES_NUMBER      (10),
-    .VBP_LINES_NUMBER      (10),
+    .BLANK_TIME            (640 + 200),
+    .BLANK_TIME_HBP_ACT    (70),
+    .VSA_LINES_NUMBER      (2),
+    .VBP_LINES_NUMBER      (4),
     .IMAGE_HEIGHT          (480),
-    .VFP_LINES_NUMBER      (10)
+    .VFP_LINES_NUMBER      (4)
     ) dsi_tx_top_0 (
     /********* System signals *********/
     .clk_sys                                (sys_clk                    ),
@@ -1172,7 +1172,7 @@ clk_wiz_0 main_pll(
     .clk_out2   (dsi_io_clk),
     .clk_out3   (dsi_io_clk_clk),
     .clk_out4   (dsi_phy_clk),
-    .reset      (),
+    .reset      (!rst_n_in),
     .locked     (sys_pll_locked     ),
     .clk_in1    (clk_in             )
     );
