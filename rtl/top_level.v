@@ -1056,7 +1056,7 @@ axi_to_stream_dma #(
 //* DSI +
 dsi_tx_top #(
     .LINE_WIDTH            (640),
-    .BITS_PER_PIXEL        (8),
+    .BITS_PER_PIXEL        (24),
     .BLANK_TIME            (640 + 200),
     .BLANK_TIME_HBP_ACT    (70),
     .VSA_LINES_NUMBER      (2),

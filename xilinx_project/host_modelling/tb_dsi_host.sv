@@ -408,7 +408,7 @@ task rd_pix_response();
 
         for(int ind_1 = 0; ind_1 <= trans_len; ind_1++) begin
             for(i = 0; i < 4; i++) begin
-                trans_data[i] = ram_memory[trans_addr/4+ind_1][i*8+:8];
+                trans_data[3-i] = ram_memory[trans_addr/4+ind_1][i*8+:8];
             end
             rd_reactive.set_data_beat_unpacked(rd_reactive.get_beat_index(),trans_data);
             rd_reactive.increment_beat_index();
@@ -705,13 +705,26 @@ localparam [5:0] PT_SHORT_10 = 6'h32;
 
 localparam [5:0] PT_LONG_1 = 6'h3E;
 
+integer dsi_checker_data_pointer;
+integer dsi_vertical_counter;
 
 function automatic void dsi_data_check();
+
+integer data_length;
+logic [7:0] byte_from_ram;
+logic [31:0] word_from_ram;
+logic [7:0] byte_from_dsi;
+integer error_counter;
+
+data_length = 0;
+error_counter = 0;
 
     case(dsi_recv_array[0])
     PT_SHORT_1:
         begin
             $display("Received packet type PT_SHORT_1");
+            dsi_checker_data_pointer = 0;
+            dsi_vertical_counter = 0;
         end
     PT_SHORT_2:
         begin
@@ -751,7 +764,29 @@ function automatic void dsi_data_check();
         end
     PT_LONG_1:
         begin
-            $display("Received packet type PT_LONG_1");
+            $display("Received packet type PT_LONG_1. Line %d", dsi_vertical_counter);
+            data_length = {dsi_recv_array[2], dsi_recv_array[1]};
+            $display("Packet size %d", data_length);
+            for(int ind = 0; ind < data_length; ind=ind+4)
+            begin
+                word_from_ram = ram_memory[(24'h10000>>2) + dsi_checker_data_pointer];
+                // $display("%h", word_from_ram);
+                for(int k = 0; k < 4; k++) begin
+                    byte_from_ram = word_from_ram[k*8+:8];
+                    byte_from_dsi = dsi_recv_array[4+ind+k];
+                    if(byte_from_dsi !== byte_from_ram)
+                    begin
+                        $display("Error on DSI checker on addr %d", (4+ind+k));
+                        $display("%h %h", byte_from_dsi, byte_from_ram);
+                        if(error_counter > 10)
+                            $stop();
+                        error_counter = error_counter + 1;
+                    end
+                end
+                dsi_checker_data_pointer = dsi_checker_data_pointer + 1;
+            end
+            dsi_vertical_counter = dsi_vertical_counter + 1;
+            $display("Packet checking done. Great success!");
         end
     default:
             $display("Unknown packet type");

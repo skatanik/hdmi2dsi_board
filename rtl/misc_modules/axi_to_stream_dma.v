@@ -154,7 +154,7 @@ assign st_startofpacket     = mst_axi_rvalid && (words_number_cnt == 0);
 assign mst_axi_araddr       = curr_addr;
 
 assign rqst_enable              = (transactions_counter < (MAX_OUTSTANDING_TR - 2));
-assign addr_rst                 = mst_axi_arready && mst_axi_arvalid && (curr_addr >= (start_addr + (words_number<<2)));
+assign addr_rst                 = mst_axi_arready && mst_axi_arvalid && (curr_addr >= (start_addr + ((words_number-BURST_SIZE)<<2)));
 
 always @(posedge clk or negedge rst_n) begin
     if(!rst_n)                                                                                                  transactions_counter <= 'b0;
