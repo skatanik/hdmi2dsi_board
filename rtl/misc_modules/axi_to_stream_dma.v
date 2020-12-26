@@ -34,7 +34,7 @@ module axi_to_stream_dma #(
     input   wire                               st_ready                    ,
 
     /********* MM iface *********/
-    input   wire [4:0]                         ctrl_address                ,
+    input   wire [3:0]                         ctrl_address                ,
     input   wire                               ctrl_read                   ,
     output  wire [31:0]                        ctrl_readdata               ,
     output  wire [1:0]                         ctrl_response               ,
@@ -94,8 +94,11 @@ avalon_mm_manager  #(
     .sys_write_strb          (sys_write_strb                ),
     .sys_write_data          (sys_write_data                )
 );
-
+`ifdef SPARTAN7
 localparam MAX_PENDING_RQST_LOG = $clog2(MAX_OUTSTANDING_TR);
+`else
+localparam MAX_PENDING_RQST_LOG = clog2(MAX_OUTSTANDING_TR);
+`endif
 
 assign sys_read_resp = 2'b00;
 assign sys_write_ready = 1'b1;
@@ -122,17 +125,17 @@ always @(posedge clk or negedge rst_n) begin
 end
 
 always @(posedge clk or negedge rst_n) begin
-    if(!rst_n)                  start_addr <= 'b0;
-    else if(sys_write_req[0])   start_addr <= sys_write_data;
+    if(!rst_n)                  start_addr <= 24'b0;
+    else if(sys_write_req[0])   start_addr <= sys_write_data[23:0];
 end
 
 always @(posedge clk or negedge rst_n) begin
-    if(!rst_n)                  words_number <= 'b0;
-    else if(sys_write_req[1])   words_number <= sys_write_data;
+    if(!rst_n)                  words_number <= 30'b0;
+    else if(sys_write_req[1])   words_number <= sys_write_data[29:0];
 end
 
 always @(posedge clk or negedge rst_n) begin
-    if(!rst_n)                  dma_enable <= 'b0;
+    if(!rst_n)                  dma_enable <= 1'b0;
     else if(sys_write_req[2])   dma_enable <= sys_write_data[0];
 end
 
@@ -160,8 +163,8 @@ always @(posedge clk or negedge rst_n) begin
     if(!rst_n)                                                                                                  transactions_counter <= 'b0;
     else if(addr_rst)                                                                                           transactions_counter <= 'b0;
     else if(mst_axi_arready && r_mst_axi_arvalid && mst_axi_rvalid && mst_axi_rready && mst_axi_rlast)          transactions_counter <= transactions_counter;
-    else if(mst_axi_arready && r_mst_axi_arvalid)                                                               transactions_counter <= transactions_counter + 1;
-    else if(mst_axi_rvalid && mst_axi_rready && mst_axi_rlast)                                                  transactions_counter <= transactions_counter - 1;
+    else if(mst_axi_arready && r_mst_axi_arvalid)                                                               transactions_counter <= transactions_counter + 2'd1;
+    else if(mst_axi_rvalid && mst_axi_rready && mst_axi_rlast)                                                  transactions_counter <= transactions_counter - 2'd1;
 end
 
 always @(posedge clk or negedge rst_n) begin
@@ -195,5 +198,18 @@ always @(posedge clk or negedge rst_n) begin
     else if(r_st_endofpacket)   r_st_startofpacket <= 1'b1;
 end
 
+
+`ifndef SPARTAN7
+
+function integer clog2;
+input integer value;
+begin
+value = value-1;
+for (clog2=0; value>0; clog2=clog2+1)
+value = value>>1;
+end
+endfunction
+
+`endif
 
 endmodule

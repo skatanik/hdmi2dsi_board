@@ -35,8 +35,8 @@ module hdmi_recv #(
     output wire             mst_axi_wvalid          ,
     input  wire             mst_axi_wready          ,
 
-    output wire             mst_axi_bid             ,
-    output wire             mst_axi_wid             ,
+    output wire [3:0]       mst_axi_bid             ,
+    output wire [3:0]       mst_axi_wid             ,
     input  wire [1:0]       mst_axi_bresp           ,
     input  wire             mst_axi_bvalid          ,
     output wire             mst_axi_bready          ,
@@ -60,8 +60,8 @@ assign mst_axi_awcache  = 4'b0000;
 assign mst_axi_awprot   = 3'b000;
 assign mst_axi_awqos    = 4'b000;
 assign mst_axi_bready   = 1'b1;
-assign mst_axi_bid      = 0;
-assign mst_axi_wid      = 0;
+assign mst_axi_bid      = 4'h0;
+assign mst_axi_wid      = 4'h0;
 
 localparam REGISTERS_NUMBER     = 8;
 localparam CTRL_ADDR_WIDTH      = 8;
@@ -161,12 +161,12 @@ always @(posedge clk_sys or negedge rst_sys_n) begin
 end
 
 always @(posedge clk_sys or negedge rst_sys_n) begin
-    if(!rst_sys_n)              start_addr <= 'b0;
+    if(!rst_sys_n)              start_addr <= 24'b0;
     else if(sys_write_req[0])   start_addr <= sys_write_data;
 end
 
 always @(posedge clk_sys or negedge rst_sys_n) begin
-    if(!rst_sys_n)              w_vs_recv_del <= 'b0;
+    if(!rst_sys_n)              w_vs_recv_del <= 1'b0;
     else                        w_vs_recv_del <= w_vs_recv;
 end
 
@@ -177,17 +177,17 @@ always @(posedge clk_sys or negedge rst_sys_n) begin
 end
 
 always @(posedge clk_sys or negedge rst_sys_n) begin
-    if(!rst_sys_n)              dma_enable <= 'b0;
+    if(!rst_sys_n)              dma_enable <= 1'b0;
     else if(sys_write_req[2])   dma_enable <= sys_write_data[0];
 end
 
 always @(posedge clk_sys or negedge rst_sys_n) begin
-    if(!rst_sys_n)              reg_pixel_number <= 'b0;
+    if(!rst_sys_n)              reg_pixel_number <= 1'b0;
     else if(sys_write_req[1])   reg_pixel_number <= sys_write_data[26-1:0];
 end
 
 always @(posedge clk_sys or negedge rst_sys_n) begin
-    if(!rst_sys_n)              reg_words_number <= 'b0;
+    if(!rst_sys_n)              reg_words_number <= 1'b0;
     else                        reg_words_number <= (reg_pixel_number*3) >> 2;
 end
 
@@ -462,6 +462,7 @@ reg                     r_mst_axi_awvalid;
 
 assign w_fifo_read = mst_axi_wready && mst_axi_wvalid;
 
+`ifdef SPARTAN7
 hdmi_data_fifo hdmi_data_fifo_0(
     .rst                (!rst_sys_n                             ),
     .wr_clk             (hdmi_clk                               ),
@@ -476,9 +477,28 @@ hdmi_data_fifo hdmi_data_fifo_0(
     .wr_rst_busy        (),
     .rd_rst_busy        ()
    );
+`else
+hdmi_data_fifo_s6 hdmi_data_fifo_s6_0(
+  .rst                  (!rst_sys_n                             ),
+  .wr_clk               (hdmi_clk                               ),
+  .rd_clk               (clk_sys                                ),
+  .din                  (hdmi_data_repack_2                     ),
+  .wr_en                (fifo_write                             ),
+  .rd_en                (w_fifo_read                            ),
+  .dout                 (w_fifo_data_out                        ),
+  .full                 (w_fifo_full                            ),
+  .empty                (w_fifo_empty                           ),
+  .rd_data_count        (w_rd_data_count                        )
+);
+`endif
 
+`ifdef SPARTAN7
 localparam BW_TRANS_CNT = $clog2(MAX_OUTSTANDING_TR);
 localparam BW_BURST_CNT = $clog2(BURST_SIZE);
+`else
+localparam BW_TRANS_CNT = clog2(MAX_OUTSTANDING_TR);
+localparam BW_BURST_CNT = clog2(BURST_SIZE);
+`endif
 
 reg [24-1:0]            r_mst_axi_awaddr;
 
@@ -497,7 +517,7 @@ assign mst_axi_wlast        = (r_burst_cnt == BURST_SIZE-1);
 assign mst_axi_wvalid       = !w_fifo_empty && wvalid_enable;
 
 always @(posedge clk_sys or negedge rst_sys_n) begin
-    if(!rst_sys_n)  vs_line_sys_clock <= 'b0;
+    if(!rst_sys_n)  vs_line_sys_clock <= 4'b0;
     else            vs_line_sys_clock <= {vs_line_sys_clock[2:0], vs_line_resync[4]};
 end
 
@@ -506,11 +526,11 @@ wire send_aw_trans;
 assign send_aw_trans = (r_transaction_counter < MAX_OUTSTANDING_TR) && (w_rd_data_count >= BURST_SIZE-2);
 
 always @(posedge clk_sys or negedge rst_sys_n) begin
-    if(!rst_sys_n)                                                                  r_transaction_counter <= 'b0;
-    else if(mst_axi_bvalid && mst_axi_bready)                                       r_transaction_counter <= r_transaction_counter - 1;
+    if(!rst_sys_n)                                                                  r_transaction_counter <= 2'b0;
+    else if(mst_axi_bvalid && mst_axi_bready)                                       r_transaction_counter <= r_transaction_counter - 2'd1;
     else if(dma_enable) begin
         if(send_aw_trans && mst_axi_awready && mst_axi_bvalid && mst_axi_bready)    r_transaction_counter <= r_transaction_counter;
-        else if(send_aw_trans && mst_axi_awready)                                   r_transaction_counter <= r_transaction_counter + 1;
+        else if(send_aw_trans && mst_axi_awready)                                   r_transaction_counter <= r_transaction_counter + 2'd1;
     end
 
 end
@@ -540,13 +560,26 @@ always @(posedge clk_sys or negedge rst_sys_n) begin
     if(!rst_sys_n)                                                  r_burst_cnt <= 'b0;
     else if(dma_enable) begin
         if(mst_axi_wlast && mst_axi_wvalid && mst_axi_wready)       r_burst_cnt <= 'b0;
-        else if(mst_axi_wvalid && mst_axi_wready)                   r_burst_cnt <= r_burst_cnt + 1;
+        else if(mst_axi_wvalid && mst_axi_wready)                   r_burst_cnt <= r_burst_cnt + 1'b1;
     end
 end
 
 assign mst_axi_awaddr       = {8'b0, r_mst_axi_awaddr};
 assign mst_axi_awlen        = BURST_SIZE-1; //r_mst_axi_awlen;
 assign mst_axi_awvalid      = r_mst_axi_awvalid;
+
+`ifndef SPARTAN7
+
+function integer clog2;
+input integer value;
+begin
+value = value-1;
+for (clog2=0; value>0; clog2=clog2+1)
+value = value>>1;
+end
+endfunction
+
+`endif
 
 endmodule
 

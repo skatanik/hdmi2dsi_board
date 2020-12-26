@@ -73,7 +73,7 @@ module dsi_host_top(
     inout  wire                  mcb3_zio                ,
     output wire                  mcb3_dram_udm           ,
     // input                   c3_sys_clk              ,
-    // input                   c3_sys_rst_i            ,
+    input                   c3_sys_rst_i            ,
     // output                  c3_calib_done           ,
     // output                  c3_clk0                 ,
     // output                  c3_rst0                 ,
@@ -81,8 +81,8 @@ module dsi_host_top(
     inout  wire             mcb3_dram_dqs_n         ,
     output wire             mcb3_dram_ck            ,
     output wire             mcb3_dram_ck_n          ,
-    input  wire             rzq3                    ,
-    input  wire             zio3                    ,
+    // input  wire             rzq3                    ,
+    // input  wire             zio3                    ,
     /* DPHY */
     output  wire [3:0]      dphy_data_hs_out_p      ,
     output  wire [3:0]      dphy_data_hs_out_n      ,
@@ -141,6 +141,10 @@ wire c3_clk0;
 wire c3_rst0;
 wire c3_sys_clk;
 wire c3_calib_done;
+
+wire rst_n_in_sync;
+wire clk_in_sync;
+wire clk_in_ddr;
 
 wire [4 - 1:0]	                    mst_core_axi_awid;
 wire [32 - 1:0]	                mst_core_axi_awaddr;
@@ -308,10 +312,10 @@ IBUFG #(
  por_controller#(
     .INP_RESYNC_SIZE(128)
 )por_controller_0(
-    .clk_input                   (clk_pre_pll       ),
+    .clk_input                   (clk_in_sync       ),
     .rst_n_input                 (rst_n_in          ),
 
-    .rst_n_output                (c3_sys_rst_i      ),
+    .rst_n_output                (rst_n_in_sync      ),
 
     .pll_1_locked                (sys_pll_locked    ),
     .pll_2_locked                (1'b1              ),
@@ -799,35 +803,32 @@ mig_ddr3 # (
 )
 u_mig_ddr3 (
 
-    .c3_sys_clk           (clk_pre_pll ),
-  .c3_sys_rst_i           (!c3_sys_rst_i),
+    .c3_sys_clk             (clk_in_ddr ),
+    .c3_sys_rst_i           (~rst_n_in_sync),
 
-  .mcb3_dram_dq           (mcb3_dram_dq),
-  .mcb3_dram_a            (mcb3_dram_a),
-  .mcb3_dram_ba           (mcb3_dram_ba),
-  .mcb3_dram_ras_n        (mcb3_dram_ras_n),
-  .mcb3_dram_cas_n        (mcb3_dram_cas_n),
-  .mcb3_dram_we_n         (mcb3_dram_we_n),
-  .mcb3_dram_odt          (mcb3_dram_odt),
-  .mcb3_dram_cke          (mcb3_dram_cke),
-  .mcb3_dram_ck           (mcb3_dram_ck),
-  .mcb3_dram_ck_n         (mcb3_dram_ck_n),
-  .mcb3_dram_dqs          (mcb3_dram_dqs),
-  .mcb3_dram_dqs_n        (mcb3_dram_dqs_n),
-  .mcb3_dram_udqs         (mcb3_dram_udqs),    // for X16 parts
-  .mcb3_dram_udqs_n       (mcb3_dram_udqs_n),  // for X16 parts
-  .mcb3_dram_udm          (mcb3_dram_udm),     // for X16 parts
-  .mcb3_dram_dm           (mcb3_dram_dm),
-  .mcb3_dram_reset_n      (mcb3_dram_reset_n),
-  .c3_clk0		        (c3_clk0),
-  .c3_rst0		        (c3_rst0),
+    .mcb3_dram_dq           (mcb3_dram_dq),
+    .mcb3_dram_a            (mcb3_dram_a),
+    .mcb3_dram_ba           (mcb3_dram_ba),
+    .mcb3_dram_ras_n        (mcb3_dram_ras_n),
+    .mcb3_dram_cas_n        (mcb3_dram_cas_n),
+    .mcb3_dram_we_n         (mcb3_dram_we_n),
+    .mcb3_dram_odt          (mcb3_dram_odt),
+    .mcb3_dram_cke          (mcb3_dram_cke),
+    .mcb3_dram_ck           (mcb3_dram_ck),
+    .mcb3_dram_ck_n         (mcb3_dram_ck_n),
+    .mcb3_dram_dqs          (mcb3_dram_dqs),
+    .mcb3_dram_dqs_n        (mcb3_dram_dqs_n),
+    .mcb3_dram_udqs         (mcb3_dram_udqs),    // for X16 parts
+    .mcb3_dram_udqs_n       (mcb3_dram_udqs_n),  // for X16 parts
+    .mcb3_dram_udm          (mcb3_dram_udm),     // for X16 parts
+    .mcb3_dram_dm           (mcb3_dram_dm),
+    .mcb3_dram_reset_n      (mcb3_dram_reset_n),
+    .c3_clk0		        (c3_clk0),
+    .c3_rst0		        (c3_rst0),
 
-
-
-  .c3_calib_done    (c3_calib_done),
-     .mcb3_rzq               (rzq3),
-
-     .mcb3_zio               (zio3),
+    .c3_calib_done          (c3_calib_done),
+    .mcb3_rzq               (mcb3_rzq   ),   //(rzq3),
+    .mcb3_zio               (mcb3_zio   ),   //(zio3),
 
     .c3_s0_axi_aclk                         (sys_clk                ),
     .c3_s0_axi_aresetn                      (sys_rst_n              ),
@@ -871,71 +872,71 @@ u_mig_ddr3 (
     .c3_s0_axi_rready                       (mst_core_axi_rready    ),
 
     //* Write only Port
-    .c3_s2_axi_aclk                         (sys_clk              ),
-    .c3_s2_axi_aresetn                      (sys_rst_n            ),
-    .c3_s2_axi_awid                         (),
-    .c3_s2_axi_awaddr                       (),
-    .c3_s2_axi_awlen                        (),
-    .c3_s2_axi_awsize                       (),
-    .c3_s2_axi_awburst                      (),
-    .c3_s2_axi_awlock                       (),
-    .c3_s2_axi_awcache                      (),
-    .c3_s2_axi_awprot                       (),
-    .c3_s2_axi_awqos                        (),
-    .c3_s2_axi_awvalid                      (),
-    .c3_s2_axi_awready                      (),
-    .c3_s2_axi_wdata                        (),
-    .c3_s2_axi_wstrb                        (),
-    .c3_s2_axi_wlast                        (),
-    .c3_s2_axi_wvalid                       (),
-    .c3_s2_axi_wready                       (),
+    .c3_s2_axi_aclk                         (sys_clk            ),
+    .c3_s2_axi_aresetn                      (sys_rst_n          ),
+    .c3_s2_axi_awid                         (4'b0               ),
+    .c3_s2_axi_awaddr                       (hdmi_axi_awaddr    ),
+    .c3_s2_axi_awlen                        (hdmi_axi_awlen     ),
+    .c3_s2_axi_awsize                       (hdmi_axi_awsize    ),
+    .c3_s2_axi_awburst                      (hdmi_axi_awburst   ),
+    .c3_s2_axi_awlock                       (hdmi_axi_awlock    ),
+    .c3_s2_axi_awcache                      (hdmi_axi_awcache   ),
+    .c3_s2_axi_awprot                       (hdmi_axi_awprot    ),
+    .c3_s2_axi_awqos                        (hdmi_axi_awqos     ),
+    .c3_s2_axi_awvalid                      (hdmi_axi_awvalid   ),
+    .c3_s2_axi_awready                      (hdmi_axi_awready   ),
+    .c3_s2_axi_wdata                        (hdmi_axi_wdata     ),
+    .c3_s2_axi_wstrb                        (hdmi_axi_wstrb     ),
+    .c3_s2_axi_wlast                        (hdmi_axi_wlast     ),
+    .c3_s2_axi_wvalid                       (hdmi_axi_wvalid    ),
+    .c3_s2_axi_wready                       (hdmi_axi_wready    ),
     .c3_s2_axi_bid                          (),
     .c3_s2_axi_wid                          (),
-    .c3_s2_axi_bresp                        (),
-    .c3_s2_axi_bvalid                       (),
-    .c3_s2_axi_bready                       (),
-    .c3_s2_axi_arid                         (),
-    .c3_s2_axi_araddr                       (),
-    .c3_s2_axi_arlen                        (),
-    .c3_s2_axi_arsize                       (),
-    .c3_s2_axi_arburst                      (),
-    .c3_s2_axi_arlock                       (),
-    .c3_s2_axi_arcache                      (),
-    .c3_s2_axi_arprot                       (),
-    .c3_s2_axi_arqos                        (),
-    .c3_s2_axi_arvalid                      (),
+    .c3_s2_axi_bresp                        (hdmi_axi_bresp     ),
+    .c3_s2_axi_bvalid                       (hdmi_axi_bvalid    ),
+    .c3_s2_axi_bready                       (hdmi_axi_bready    ),
+    .c3_s2_axi_arid                         (4'b0),
+    .c3_s2_axi_araddr                       (32'b0),
+    .c3_s2_axi_arlen                        (8'b0),
+    .c3_s2_axi_arsize                       (3'b0),
+    .c3_s2_axi_arburst                      (2'b0),
+    .c3_s2_axi_arlock                       (1'b0),
+    .c3_s2_axi_arcache                      (4'b0),
+    .c3_s2_axi_arprot                       (3'b0),
+    .c3_s2_axi_arqos                        (4'b0),
+    .c3_s2_axi_arvalid                      (1'b0),
     .c3_s2_axi_arready                      (),
     .c3_s2_axi_rid                          (),
     .c3_s2_axi_rdata                        (),
     .c3_s2_axi_rresp                        (),
     .c3_s2_axi_rlast                        (),
     .c3_s2_axi_rvalid                       (),
-    .c3_s2_axi_rready                       (),
+    .c3_s2_axi_rready                       (1'b1),
 
     //* Read only Port
     .c3_s3_axi_aclk                         (sys_clk              ),
     .c3_s3_axi_aresetn                      (sys_rst_n            ),
-    .c3_s3_axi_awid                         (),
-    .c3_s3_axi_awaddr                       (),
-    .c3_s3_axi_awlen                        (),
-    .c3_s3_axi_awsize                       (),
-    .c3_s3_axi_awburst                      (),
-    .c3_s3_axi_awlock                       (),
-    .c3_s3_axi_awcache                      (),
-    .c3_s3_axi_awprot                       (),
-    .c3_s3_axi_awqos                        (),
-    .c3_s3_axi_awvalid                      (),
+    .c3_s3_axi_awid                         (4'b0),
+    .c3_s3_axi_awaddr                       (32'b0),
+    .c3_s3_axi_awlen                        (8'b0),
+    .c3_s3_axi_awsize                       (3'b0),
+    .c3_s3_axi_awburst                      (2'b0),
+    .c3_s3_axi_awlock                       (1'b0),
+    .c3_s3_axi_awcache                      (4'b0),
+    .c3_s3_axi_awprot                       (3'b0),
+    .c3_s3_axi_awqos                        (4'b0),
+    .c3_s3_axi_awvalid                      (1'b0),
     .c3_s3_axi_awready                      (),
-    .c3_s3_axi_wdata                        (),
-    .c3_s3_axi_wstrb                        (),
-    .c3_s3_axi_wlast                        (),
-    .c3_s3_axi_wvalid                       (),
+    .c3_s3_axi_wdata                        (32'b0),
+    .c3_s3_axi_wstrb                        (1'b0),
+    .c3_s3_axi_wlast                        (1'b0),
+    .c3_s3_axi_wvalid                       (1'b0),
     .c3_s3_axi_wready                       (),
     .c3_s3_axi_bid                          (),
     .c3_s3_axi_wid                          (),
     .c3_s3_axi_bresp                        (),
     .c3_s3_axi_bvalid                       (),
-    .c3_s3_axi_bready                       (),
+    .c3_s3_axi_bready                       (1'b1),
     .c3_s3_axi_arid                         (pix_axi_arid       ),
     .c3_s3_axi_araddr                       (pix_axi_araddr     ),
     .c3_s3_axi_arlen                        (pix_axi_arlen      ),
@@ -1160,11 +1161,12 @@ progmem_wrapper progmem_wrapper_0(
 //* Main PLL (sys clock + dphy)
 wire CLKFBOUT;
 wire CLKFBIN;
-wire CLKOUT0; //* 100 MHz
-wire CLKOUT1; //* CLKOUT2 / 8
-wire CLKOUT2; //* 600 MHZ
-wire CLKOUT3; //* 600 MHZ
-wire CLKOUT4; //* 50 MHz input
+wire CLKOUT0; //* 600 MHz
+wire CLKOUT1; //* 600 with shift
+wire CLKOUT2; //*  75MHz = CLKOUT0 / 8
+wire CLKOUT3; //* 100 MHZ
+wire CLKOUT4; //* 25 MHz
+wire CLKOUT5; //* 100 MHz for DDR
 
 `ifdef SPARTAN7
 clk_wiz_0 main_pll(
@@ -1179,7 +1181,7 @@ clk_wiz_0 main_pll(
 
 assign clk_pre_pll = clk_in;
 `else
-
+// assign clk_pre_pll = clk_in;
 IBUFG #(
       .IOSTANDARD("DEFAULT")
    ) IBUFG_inst (
@@ -1194,12 +1196,12 @@ PLL_BASE #(
     .CLKIN_PERIOD(40),                  // Input clock period in ns to ps resolution (i.e. 33.333 is 30
                                          // MHz).
     // CLKOUT0_DIVIDE - CLKOUT5_DIVIDE: Divide amount for CLKOUT# clock output (1-128)
-    .CLKOUT0_DIVIDE(12),
-    .CLKOUT1_DIVIDE(75),
-    .CLKOUT2_DIVIDE(2),
-    .CLKOUT3_DIVIDE(2),
-    .CLKOUT4_DIVIDE(12),
-    .CLKOUT5_DIVIDE(1),
+    .CLKOUT0_DIVIDE(2),
+    .CLKOUT1_DIVIDE(2),
+    .CLKOUT2_DIVIDE(16),
+    .CLKOUT3_DIVIDE(12),
+    .CLKOUT4_DIVIDE(48),
+    .CLKOUT5_DIVIDE(12),
     // CLKOUT0_DUTY_CYCLE - CLKOUT5_DUTY_CYCLE: Duty cycle for CLKOUT# clock output (0.01-0.99).
     .CLKOUT0_DUTY_CYCLE(0.5),
     .CLKOUT1_DUTY_CYCLE(0.5),
@@ -1227,11 +1229,11 @@ PLL_BASE #(
      .CLKOUT2(CLKOUT2),
      .CLKOUT3(CLKOUT3),
      .CLKOUT4(CLKOUT4),
-     //   .CLKOUT5(CLKOUT5),
+     .CLKOUT5(CLKOUT5),
      .LOCKED(sys_pll_locked),     // 1-bit output: PLL_BASE lock status output
      .CLKFBIN(CLKFBIN),   // 1-bit input: Feedback clock input
      .CLKIN(clk_pre_pll),       // 1-bit input: Clock input
-     .RST(!c3_sys_rst_i)            // 1-bit input: Reset input
+     .RST(0)            // 1-bit input: Reset input
 );
 
 BUFG BUFG_feedback (
@@ -1239,14 +1241,28 @@ BUFG BUFG_feedback (
       .I(CLKFBOUT)  // Clock buffer input (connect directly to top-level port)
    );
 
-BUFG BUFG_sys_clock (
+BUFGCE BUFG_sys_clock (
       .O(sys_clk), // Clock buffer output
-      .I(CLKOUT0)  // Clock buffer input (connect directly to top-level port)
+      .I(CLKOUT3),  // Clock buffer input (connect directly to top-level port)
+      .CE(sys_pll_locked)
    );
 
-BUFG BUFG_dsi_main_clock (
+BUFGCE BUFG_dsi_main_clock (
       .O(dsi_phy_clk), // Clock buffer output
-      .I(CLKOUT1)  // Clock buffer input (connect directly to top-level port)
+      .I(CLKOUT2),  // Clock buffer input (connect directly to top-level port)
+      .CE(sys_pll_locked)
+   );
+
+BUFGCE BUFG_input_ddr_clock (
+      .O(clk_in_ddr), // Clock buffer output
+      .I(CLKOUT5),  // Clock buffer input (connect directly to top-level port)
+      .CE(sys_pll_locked)
+   );
+
+BUFGCE BUFG_input_clock (
+      .O(clk_in_sync), // Clock buffer output
+      .I(CLKOUT4),  // Clock buffer input (connect directly to top-level port)
+      .CE(sys_pll_locked)
    );
 
 BUFPLL #(
@@ -1257,9 +1273,9 @@ BUFPLL #(
       .IOCLK(dsi_io_clk),               // 1-bit output: Output I/O clock
       .LOCK(),                 // 1-bit output: Synchronized LOCK output
       .SERDESSTROBE(dsi_io_serdes_latch), // 1-bit output: Output SERDES strobe (connect to ISERDES2/OSERDES2)
-      .GCLK(CLKOUT4),                 // 1-bit input: BUFG clock input
+      .GCLK(CLKOUT2),                 // 1-bit input: BUFG clock input
       .LOCKED(sys_pll_locked),             // 1-bit input: LOCKED input from PLL
-      .PLLIN(CLKOUT2)                // 1-bit input: Clock input from PLL
+      .PLLIN(CLKOUT0)                // 1-bit input: Clock input from PLL
    );
 
 BUFPLL #(
@@ -1270,9 +1286,9 @@ BUFPLL #(
       .IOCLK(dsi_io_clk_clk),               // 1-bit output: Output I/O clock
       .LOCK(),                 // 1-bit output: Synchronized LOCK output
       .SERDESSTROBE(dsi_io_clk_serdes_latch), // 1-bit output: Output SERDES strobe (connect to ISERDES2/OSERDES2)
-      .GCLK(CLKOUT3),                 // 1-bit input: BUFG clock input
+      .GCLK(CLKOUT2),                 // 1-bit input: BUFG clock input
       .LOCKED(sys_pll_locked),             // 1-bit input: LOCKED input from PLL
-      .PLLIN(CLKOUT2)                // 1-bit input: Clock input from PLL
+      .PLLIN(CLKOUT1)                // 1-bit input: Clock input from PLL
    );
 
 `endif

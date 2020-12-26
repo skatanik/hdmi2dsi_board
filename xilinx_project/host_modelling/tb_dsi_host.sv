@@ -412,7 +412,7 @@ task rd_pix_response();
             end
             rd_reactive.set_data_beat_unpacked(rd_reactive.get_beat_index(),trans_data);
             rd_reactive.increment_beat_index();
-            rd_reactive.set_beat_delay(ind_1,0); // $urandom_range(0,10)
+            rd_reactive.set_beat_delay(ind_1,$urandom_range(0,3)); // $urandom_range(0,10)
         end
 
         // $display("/****************************************/\n");
