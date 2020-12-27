@@ -73,7 +73,7 @@ module dsi_host_top(
     inout  wire                  mcb3_zio                ,
     output wire                  mcb3_dram_udm           ,
     // input                   c3_sys_clk              ,
-    input                   c3_sys_rst_i            ,
+    // input                   c3_sys_rst_i            ,
     // output                  c3_calib_done           ,
     // output                  c3_clk0                 ,
     // output                  c3_rst0                 ,
@@ -240,6 +240,12 @@ wire                               st_endofpacket;
 wire                               st_startofpacket;
 wire                               st_ready;
 
+wire [31:0]                        st_gen_data;
+wire                               st_gen_valid;
+wire                               st_gen_endofpacket;
+wire                               st_gen_startofpacket;
+wire                               st_gen_ready;
+
 wire                               ram_mem_read;
 wire [31:0]                        ram_mem_readdata;
 wire [1:0]                         ram_mem_response;
@@ -287,6 +293,14 @@ wire                               ctrl_hdmi_write;
 wire [31:0]                        ctrl_hdmi_writedata;
 wire [3:0]                         ctrl_hdmi_byteenable;
 wire                               ctrl_hdmi_waitrequest;
+
+wire                               ctrl_pg_read;
+wire [31:0]                        ctrl_pg_readdata;
+wire [1:0]                         ctrl_pg_response;
+wire                               ctrl_pg_write;
+wire [31:0]                        ctrl_pg_writedata;
+wire [3:0]                         ctrl_pg_byteenable;
+wire                               ctrl_pg_waitrequest;
 
 wire [32-1:0] irq_vec;
 wire          dsi_irq;
@@ -372,7 +386,7 @@ BASE ADDR           MASK          SIZE         COMMENT
 0x0000_0000     0xFFFC_0000       2^18          DDR
 0x0100_0000     0xFFFF_F000       2^12          PROG_MEM
 0x0100_1000     0xFFFF_FF00       2^8           HDMI
-0x0100_1100     0xFFFF_FF00       2^8           PIX WRITE
+0x0100_1100     0xFFFF_FF00       2^8           PATTERN GENERATOR
 0x0100_1200     0xFFFF_FF00       2^8           PIX READER
 0x0100_1300     0xFFFF_FF00       2^8           DSI
 0x0100_1400     0xFFFF_FF00       2^8           USART
@@ -398,6 +412,7 @@ wire [M3_ADDR_WIDTH-1:0]                         ctrl_dsi_address;
 wire [M4_ADDR_WIDTH-1:0]                         ctrl_prog_mem_address;
 wire [M5_ADDR_WIDTH-1:0]                         ctrl_uart_address;
 wire [M1_ADDR_WIDTH-1:0]                         ctrl_hdmi_address;
+wire [M9_ADDR_WIDTH-1:0]                         ctrl_pg_address;
 
 interconnect_mod #(
     .M0_BASE(32'h0000_0000),    //* DDR
@@ -427,8 +442,8 @@ interconnect_mod #(
     .M8_BASE(32'h0100_1700),    //! GPIO
     .M8_MASK(32'h0000_0000),    //! GPIO
     .M8_ADDR_W(M8_ADDR_WIDTH),
-    .M9_BASE(32'hFFFF_FFFF),    //! TODO
-    .M9_MASK(32'h0000_0000),    //! TODO
+    .M9_BASE(32'h0100_1100),    //! PATTERN GENERATOR
+    .M9_MASK(32'hFFFF_FF00),    //! PATTERN GENERATOR
     .M9_ADDR_W(M9_ADDR_WIDTH)
 )interconnect_mod_0(
     // Slave port 0
@@ -532,14 +547,14 @@ interconnect_mod #(
     .m8_bus_waitrequest         (1'b0),
 
     //* Master port 9
-    .m9_bus_addr                (),
-    .m9_bus_read                (),
-    .m9_bus_readdata            (),
-    .m9_bus_response            (),
-    .m9_bus_write               (),
-    .m9_bus_writedata           (),
-    .m9_bus_byteenable          (),
-    .m9_bus_waitrequest         (1'b0)
+    .m9_bus_addr                (ctrl_pg_address        ),
+    .m9_bus_read                (ctrl_pg_read           ),
+    .m9_bus_readdata            (ctrl_pg_readdata       ),
+    .m9_bus_response            (ctrl_pg_response       ),
+    .m9_bus_write               (ctrl_pg_write          ),
+    .m9_bus_writedata           (ctrl_pg_writedata      ),
+    .m9_bus_byteenable          (ctrl_pg_byteenable     ),
+    .m9_bus_waitrequest         (ctrl_pg_waitrequest    )
 );
 
 //* Prosessor to AXI bridge
@@ -1080,11 +1095,11 @@ dsi_tx_top #(
     .irq                                    (dsi_irq                    ),
 
     /********* Avalon-ST input *********/
-    .in_avl_st_data                         (st_data                ),
-    .in_avl_st_valid                        (st_valid               ),
-    .in_avl_st_endofpacket                  (st_endofpacket         ),
-    .in_avl_st_startofpacket                (st_startofpacket       ),
-    .in_avl_st_ready                        (st_ready               ),
+    .in_avl_st_data                         (st_gen_data            ),
+    .in_avl_st_valid                        (st_gen_valid           ),
+    .in_avl_st_endofpacket                  (st_gen_endofpacket     ),
+    .in_avl_st_startofpacket                (st_gen_startofpacket   ),
+    .in_avl_st_ready                        (st_gen_ready           ),
 
     /********* Output interface *********/
     .dphy_data_hs_out_p                     (dphy_data_hs_out_p     ),  // active
@@ -1155,7 +1170,35 @@ progmem_wrapper progmem_wrapper_0(
 
 //* GPIO
 
-//* Timer
+//* PAttern GENERATOR
+pattern_generator  #(
+    .IMG_HEIGH(24),
+    .IMG_WIDTH(24)
+)pattern_generator_0(
+    .clk                        (sys_clk                ),
+    .rst_n                      (sys_rst_n              ),
+
+    .st_in_data                 (st_data                ),
+    .st_in_valid                (st_valid               ),
+    .st_in_endofpacket          (st_endofpacket         ),
+    .st_in_startofpacket        (st_startofpacket       ),
+    .st_in_ready                (st_ready               ),
+
+    .st_out_data                (st_gen_data           ),
+    .st_out_valid               (st_gen_valid          ),
+    .st_out_endofpacket         (st_gen_endofpacket    ),
+    .st_out_startofpacket       (st_gen_startofpacket  ),
+    .st_out_ready               (st_gen_ready          ),
+
+    .ctrl_address               (ctrl_pg_address       ),
+    .ctrl_read                  (ctrl_pg_read          ),
+    .ctrl_readdata              (ctrl_pg_readdata      ),
+    .ctrl_response              (ctrl_pg_response      ),
+    .ctrl_write                 (ctrl_pg_write         ),
+    .ctrl_writedata             (ctrl_pg_writedata     ),
+    .ctrl_byteenable            (ctrl_pg_byteenable    ),
+    .ctrl_waitrequest           (ctrl_pg_waitrequest   )
+);
 
 //* Clocking
 //* Main PLL (sys clock + dphy)
@@ -1211,7 +1254,7 @@ PLL_BASE #(
     .CLKOUT5_DUTY_CYCLE(0.5),
     // CLKOUT0_PHASE - CLKOUT5_PHASE: Output phase relationship for CLKOUT# clock output (-360.0-360.0).
     .CLKOUT0_PHASE(0.0),
-    .CLKOUT1_PHASE(0.0),
+    .CLKOUT1_PHASE(180.0),
     .CLKOUT2_PHASE(0.0),
     .CLKOUT3_PHASE(0.0),
     .CLKOUT4_PHASE(0.0),
@@ -1266,27 +1309,27 @@ BUFGCE BUFG_input_clock (
    );
 
 BUFPLL #(
-      .DIVIDE(1),           // DIVCLK divider (1-8)
+      .DIVIDE(8),           // DIVCLK divider (1-8)
       .ENABLE_SYNC("TRUE")  // Enable synchrnonization between PLL and GCLK (TRUE/FALSE)
    )
    BUFPLL_dphy_clk (
       .IOCLK(dsi_io_clk),               // 1-bit output: Output I/O clock
       .LOCK(),                 // 1-bit output: Synchronized LOCK output
       .SERDESSTROBE(dsi_io_serdes_latch), // 1-bit output: Output SERDES strobe (connect to ISERDES2/OSERDES2)
-      .GCLK(CLKOUT2),                 // 1-bit input: BUFG clock input
+      .GCLK(dsi_phy_clk),                 // 1-bit input: BUFG clock input
       .LOCKED(sys_pll_locked),             // 1-bit input: LOCKED input from PLL
       .PLLIN(CLKOUT0)                // 1-bit input: Clock input from PLL
    );
 
 BUFPLL #(
-      .DIVIDE(1),           // DIVCLK divider (1-8)
+      .DIVIDE(8),           // DIVCLK divider (1-8)
       .ENABLE_SYNC("TRUE")  // Enable synchrnonization between PLL and GCLK (TRUE/FALSE)
    )
    BUFPLL_dphy_clk_clk (
       .IOCLK(dsi_io_clk_clk),               // 1-bit output: Output I/O clock
       .LOCK(),                 // 1-bit output: Synchronized LOCK output
       .SERDESSTROBE(dsi_io_clk_serdes_latch), // 1-bit output: Output SERDES strobe (connect to ISERDES2/OSERDES2)
-      .GCLK(CLKOUT2),                 // 1-bit input: BUFG clock input
+      .GCLK(dsi_phy_clk),                 // 1-bit input: BUFG clock input
       .LOCKED(sys_pll_locked),             // 1-bit input: LOCKED input from PLL
       .PLLIN(CLKOUT1)                // 1-bit input: Clock input from PLL
    );
