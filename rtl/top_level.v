@@ -1290,7 +1290,7 @@ BUFGCE BUFG_sys_clock (
       .CE(sys_pll_locked)
    );
 
-BUFG BUFG_dsi_main_clock (
+BUFGCE BUFG_dsi_main_clock (
       .O(dsi_phy_clk), // Clock buffer output
       .I(CLKOUT2),  // Clock buffer input (connect directly to top-level port)
       .CE(sys_pll_locked)
