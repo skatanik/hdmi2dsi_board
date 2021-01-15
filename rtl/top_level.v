@@ -74,7 +74,7 @@ module dsi_host_top(
     output wire                  mcb3_dram_udm           ,
     // input                   c3_sys_clk              ,
     // input                   c3_sys_rst_i            ,
-    // output                  c3_calib_done           ,
+    // output  wire                c3_calib_done           ,
     // output                  c3_clk0                 ,
     // output                  c3_rst0                 ,
     inout  wire             mcb3_dram_dqs           ,
@@ -332,13 +332,13 @@ IBUFG #(
     .rst_n_output                (rst_n_in_sync      ),
 
     .pll_1_locked                (sys_pll_locked    ),
-    .pll_2_locked                (1'b1              ),
+    .pll_2_locked                (c3_calib_done              ),
 
     .clk_1_in                    (sys_clk           ),
     .rst_1_out                   (sys_rst_n         ),
 
-    .clk_2_in                    (dsi_io_clk        ),
-    .rst_2_out                   (dsi_io_rst_n      ),
+    // .clk_2_in                    (dsi_io_clk        ),
+    // .rst_2_out                   (dsi_io_rst_n      ),
 
     .clk_3_in                    (dsi_phy_clk       ),
     .rst_3_out                   (dsi_phy_rst_n     ),
@@ -1102,15 +1102,15 @@ dsi_tx_top #(
     .in_avl_st_ready                        (st_gen_ready           ),
 
     /********* Output interface *********/
-    .dphy_data_hs_out_p                     (dphy_data_hs_out_p     ),  // active
-    .dphy_data_hs_out_n                     (dphy_data_hs_out_n     ),  // unactive. do not connect
-    .dphy_data_lp_out_p                     (dphy_data_lp_out_p     ),
-    .dphy_data_lp_out_n                     (dphy_data_lp_out_n     ),
+   .dphy_data_hs_out_p                     (dphy_data_hs_out_p     ),  // active
+   .dphy_data_hs_out_n                     (dphy_data_hs_out_n     ),  // unactive. do not connect
+   .dphy_data_lp_out_p                     (dphy_data_lp_out_p     ),
+   .dphy_data_lp_out_n                     (dphy_data_lp_out_n     ),
 
-    .dphy_clk_hs_out_p                      (dphy_clk_hs_out_p      ),  // active
-    .dphy_clk_hs_out_n                      (dphy_clk_hs_out_n      ),  // unactive. do not connect
-    .dphy_clk_lp_out_p                      (dphy_clk_lp_out_p      ),
-    .dphy_clk_lp_out_n                      (dphy_clk_lp_out_n      ),
+   .dphy_clk_hs_out_p                      (dphy_clk_hs_out_p      ),  // active
+   .dphy_clk_hs_out_n                      (dphy_clk_hs_out_n      ),  // unactive. do not connect
+   .dphy_clk_lp_out_p                      (dphy_clk_lp_out_p      ),
+   .dphy_clk_lp_out_n                      (dphy_clk_lp_out_n      ),
 
     /********* Avalon-MM iface *********/
     .avl_mm_address                         (ctrl_dsi_address       ),
@@ -1234,17 +1234,17 @@ IBUFG #(
 
 PLL_BASE #(
     .BANDWIDTH("OPTIMIZED"),             // "HIGH", "LOW" or "OPTIMIZED"
-    .CLKFBOUT_MULT(48),                   // Multiply value for all CLKOUT clock outputs (1-64)
+    .CLKFBOUT_MULT(24),                   // Multiply value for all CLKOUT clock outputs (1-64)
     .CLKFBOUT_PHASE(0.0),                // Phase offset in degrees of the clock feedback output (0.0-360.0).
     .CLKIN_PERIOD(40),                  // Input clock period in ns to ps resolution (i.e. 33.333 is 30
                                          // MHz).
     // CLKOUT0_DIVIDE - CLKOUT5_DIVIDE: Divide amount for CLKOUT# clock output (1-128)
-    .CLKOUT0_DIVIDE(2),
-    .CLKOUT1_DIVIDE(2),
-    .CLKOUT2_DIVIDE(16),
-    .CLKOUT3_DIVIDE(12),
-    .CLKOUT4_DIVIDE(48),
-    .CLKOUT5_DIVIDE(12),
+    .CLKOUT0_DIVIDE(1),
+    .CLKOUT1_DIVIDE(1),
+    .CLKOUT2_DIVIDE(8),
+    .CLKOUT3_DIVIDE(6),
+    .CLKOUT4_DIVIDE(24),
+    .CLKOUT5_DIVIDE(6),
     // CLKOUT0_DUTY_CYCLE - CLKOUT5_DUTY_CYCLE: Duty cycle for CLKOUT# clock output (0.01-0.99).
     .CLKOUT0_DUTY_CYCLE(0.5),
     .CLKOUT1_DUTY_CYCLE(0.5),
