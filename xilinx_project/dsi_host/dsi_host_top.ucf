@@ -376,3 +376,6 @@ NET "hdmi_de" IOSTANDARD = LVCMOS33;
 NET "hdmi_clk" LOC = C10;
 NET "hdmi_clk" IOSTANDARD = LVCMOS33;
 
+#USART
+NET "usart_rxd" LOC = N12 | IOSTANDARD = LVCMOS33;
+NET "usart_txd" LOC = P12 | IOSTANDARD = LVCMOS33;
