@@ -1,7 +1,7 @@
 module uart_wrapper(
     //* system signals
     input  wire                     clk                  ,
-    input  wire                     rst                  ,
+    input  wire                     rst_n                ,
 
     //* external interface
     input  wire                     rxd                  ,
@@ -78,7 +78,7 @@ uart #(
 )uart_0
 (
     .clk            (clk                    ),
-    .rst            (rst_n                 ),
+    .rst            (~rst_n                 ),
 
     /*
      * AXI input

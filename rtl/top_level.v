@@ -103,8 +103,8 @@ module dsi_host_top(
     /* I2C EEPROM */
     /* LED */
     /* UART */
-    input  wire             rxd                     ,
-    output wire             txd
+    input  wire             usart_rxd                     ,
+    output wire             usart_txd
     /* BUTTON */
     );
 
@@ -1102,15 +1102,15 @@ dsi_tx_top #(
     .in_avl_st_ready                        (st_gen_ready           ),
 
     /********* Output interface *********/
-   .dphy_data_hs_out_p                     (dphy_data_hs_out_p     ),  // active
-   .dphy_data_hs_out_n                     (dphy_data_hs_out_n     ),  // unactive. do not connect
-   .dphy_data_lp_out_p                     (dphy_data_lp_out_p     ),
-   .dphy_data_lp_out_n                     (dphy_data_lp_out_n     ),
+    .dphy_data_hs_out_p                     (dphy_data_hs_out_p     ),  // active
+    .dphy_data_hs_out_n                     (dphy_data_hs_out_n     ),  // unactive. do not connect
+    .dphy_data_lp_out_p                     (dphy_data_lp_out_p     ),
+    .dphy_data_lp_out_n                     (dphy_data_lp_out_n     ),
 
-   .dphy_clk_hs_out_p                      (dphy_clk_hs_out_p      ),  // active
-   .dphy_clk_hs_out_n                      (dphy_clk_hs_out_n      ),  // unactive. do not connect
-   .dphy_clk_lp_out_p                      (dphy_clk_lp_out_p      ),
-   .dphy_clk_lp_out_n                      (dphy_clk_lp_out_n      ),
+    .dphy_clk_hs_out_p                      (dphy_clk_hs_out_p      ),  // active
+    .dphy_clk_hs_out_n                      (dphy_clk_hs_out_n      ),  // unactive. do not connect
+    .dphy_clk_lp_out_p                      (dphy_clk_lp_out_p      ),
+    .dphy_clk_lp_out_n                      (dphy_clk_lp_out_n      ),
 
     /********* Avalon-MM iface *********/
     .avl_mm_address                         (ctrl_dsi_address       ),
@@ -1134,11 +1134,11 @@ dsi_tx_top #(
 uart_wrapper uart_wrapper_0(
     //* system signals
     .clk                    (sys_clk                ),
-    .rst                    (sys_rst_n              ),
+    .rst_n                  (sys_rst_n              ),
 
     //* external interface
-    .rxd                    (rxd                    ),
-    .txd                    (txd                    ),
+    .rxd                    (usart_rxd             ),
+    .txd                    (usart_txd             ),
 
     //* system interface
     .ctrl_address           (ctrl_uart_address      ),

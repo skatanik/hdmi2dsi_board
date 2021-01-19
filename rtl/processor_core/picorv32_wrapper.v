@@ -45,7 +45,12 @@ picorv32 #(
 		// .ENABLE_MUL(ENABLE_MUL),
 		// .ENABLE_DIV(ENABLE_DIV),
 		.ENABLE_IRQ(1),
-		.ENABLE_IRQ_QREGS(ENABLE_IRQ_QREGS)
+		.ENABLE_IRQ_QREGS(ENABLE_IRQ_QREGS),
+		.ENABLE_COUNTERS(0),
+		.LATCHED_MEM_RDATA(1),
+		.TWO_STAGE_SHIFT(0),
+		.CATCH_MISALIGN(0),
+		.CATCH_ILLINSN(0)
 	) cpu (
 		.clk         (clk        ),
 		.resetn      (rst_n      ),

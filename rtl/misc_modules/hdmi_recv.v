@@ -308,35 +308,35 @@ feedback_cdc_sync #(
     .dest_data         (w_vs_cnt    )
 );
 
-feedback_cdc_sync #(
-    .WIDTH(32)
-) frames_counter_cdc (
-    .clk_src           (hdmi_clk         ),    // Clock of source domain
-    .rst_n_src         (hdmi_rst_n       ),    // reset of source domain
-    .clk_dest          (clk_sys          ),    // Clock of destination domain
-    .rst_n_dest        (rst_sys_n        ),    // reset of destination domain
-
-    .src_data          (fps_cnt_presync  ),
-    .src_write         (cdc_ready_2      ),
-    .src_ready         (cdc_ready_2      ),
-
-    .dest_data         (w_frames_cnt    )
-);
-
-feedback_cdc_sync #(
-    .WIDTH(32)
-) pix_counter_cdc (
-    .clk_src           (hdmi_clk         ),    // Clock of source domain
-    .rst_n_src         (hdmi_rst_n       ),    // reset of source domain
-    .clk_dest          (clk_sys          ),    // Clock of destination domain
-    .rst_n_dest        (rst_sys_n        ),    // reset of destination domain
-
-    .src_data          (pix_cnt_presync  ),
-    .src_write         (cdc_ready_3      ),
-    .src_ready         (cdc_ready_3      ),
-
-    .dest_data         (w_pix_cnt    )
-);
+// feedback_cdc_sync #(
+//     .WIDTH(32)
+// ) frames_counter_cdc (
+//     .clk_src           (hdmi_clk         ),    // Clock of source domain
+//     .rst_n_src         (hdmi_rst_n       ),    // reset of source domain
+//     .clk_dest          (clk_sys          ),    // Clock of destination domain
+//     .rst_n_dest        (rst_sys_n        ),    // reset of destination domain
+//
+//     .src_data          (fps_cnt_presync  ),
+//     .src_write         (cdc_ready_2      ),
+//     .src_ready         (cdc_ready_2      ),
+//
+//     .dest_data         (w_frames_cnt    )
+// );
+//
+// feedback_cdc_sync #(
+//     .WIDTH(32)
+// ) pix_counter_cdc (
+//     .clk_src           (hdmi_clk         ),    // Clock of source domain
+//     .rst_n_src         (hdmi_rst_n       ),    // reset of source domain
+//     .clk_dest          (clk_sys          ),    // Clock of destination domain
+//     .rst_n_dest        (rst_sys_n        ),    // reset of destination domain
+//
+//     .src_data          (pix_cnt_presync  ),
+//     .src_write         (cdc_ready_3      ),
+//     .src_ready         (cdc_ready_3      ),
+//
+//     .dest_data         (w_pix_cnt    )
+// );
 
 reg reg_vs_recv_save;
 
@@ -374,11 +374,11 @@ always @(posedge hdmi_clk or negedge hdmi_rst_n) begin
     else if((hs_line_resync[2] ^ hs_line_resync[3]) & hs_line_resync[2])    vs_cnt_curr <= vs_cnt_curr + 1;
 end
 
-always @(posedge hdmi_clk or negedge hdmi_rst_n) begin
-    if(!hdmi_rst_n)                                                         pix_cnt_curr <= 'b0;
-    else if((vs_line_resync[2] ^ vs_line_resync[3]) & vs_line_resync[2])    pix_cnt_curr <= 0;
-    else if(de_line_resync[2])                                              pix_cnt_curr <= pix_cnt_curr + 1;
-end
+// always @(posedge hdmi_clk or negedge hdmi_rst_n) begin
+//     if(!hdmi_rst_n)                                                         pix_cnt_curr <= 'b0;
+//     else if((vs_line_resync[2] ^ vs_line_resync[3]) & vs_line_resync[2])    pix_cnt_curr <= 0;
+//     else if(de_line_resync[2])                                              pix_cnt_curr <= pix_cnt_curr + 1;
+// end
 
 always @(posedge hdmi_clk or negedge hdmi_rst_n) begin
     if(!hdmi_rst_n)                                                         hs_cnt_presync <= 'b0;
@@ -390,34 +390,34 @@ always @(posedge hdmi_clk or negedge hdmi_rst_n) begin
     else if((vs_line_resync[2] ^ vs_line_resync[3]) & vs_line_resync[2])    vs_cnt_presync <= vs_cnt_curr;
 end
 
-always @(posedge hdmi_clk or negedge hdmi_rst_n) begin
-    if(!hdmi_rst_n)                                                         pix_cnt_presync <= 'b0;
-    else if((vs_line_resync[2] ^ vs_line_resync[3]) & vs_line_resync[2])    pix_cnt_presync <= pix_cnt_curr;
-end
-
-localparam ONE_SEC_HDMI_CLOCK_NUMBER = 100000000;
-reg [31:0] hdmi_clock_counter;
-
-wire reset_clock_counter;
-assign reset_clock_counter = hdmi_clock_counter == ONE_SEC_HDMI_CLOCK_NUMBER-1;
-
-always @(posedge hdmi_clk or negedge hdmi_rst_n) begin
-    if(!hdmi_rst_n)                         hdmi_clock_counter <= 'b0;
-    else if(reset_clock_counter)            hdmi_clock_counter <= 0;
-    else                                    hdmi_clock_counter <= hdmi_clock_counter + 1;
-end
-
-always @(posedge hdmi_clk or negedge hdmi_rst_n) begin
-    if(!hdmi_rst_n)                         fps_cnt_presync <= 'b0;
-    else if(reset_clock_counter)            fps_cnt_presync <= fps_cnt_curr;
-end
-
-always @(posedge hdmi_clk or negedge hdmi_rst_n) begin
-    if(!hdmi_rst_n)                                                         fps_cnt_curr <= 'b0;
-    else if(reset_clock_counter)                                            fps_cnt_curr <= 0;
-    else if((vs_line_resync[2] ^ vs_line_resync[3]) & vs_line_resync[2])    fps_cnt_curr <= fps_cnt_curr + 1;
-end
-
+// always @(posedge hdmi_clk or negedge hdmi_rst_n) begin
+//     if(!hdmi_rst_n)                                                         pix_cnt_presync <= 'b0;
+//     else if((vs_line_resync[2] ^ vs_line_resync[3]) & vs_line_resync[2])    pix_cnt_presync <= pix_cnt_curr;
+// end
+//
+// localparam ONE_SEC_HDMI_CLOCK_NUMBER = 100000000;
+// reg [31:0] hdmi_clock_counter;
+//
+// wire reset_clock_counter;
+// assign reset_clock_counter = hdmi_clock_counter == ONE_SEC_HDMI_CLOCK_NUMBER-1;
+//
+// always @(posedge hdmi_clk or negedge hdmi_rst_n) begin
+//     if(!hdmi_rst_n)                         hdmi_clock_counter <= 'b0;
+//     else if(reset_clock_counter)            hdmi_clock_counter <= 0;
+//     else                                    hdmi_clock_counter <= hdmi_clock_counter + 1;
+// end
+//
+// always @(posedge hdmi_clk or negedge hdmi_rst_n) begin
+//     if(!hdmi_rst_n)                         fps_cnt_presync <= 'b0;
+//     else if(reset_clock_counter)            fps_cnt_presync <= fps_cnt_curr;
+// end
+//
+// always @(posedge hdmi_clk or negedge hdmi_rst_n) begin
+//     if(!hdmi_rst_n)                                                         fps_cnt_curr <= 'b0;
+//     else if(reset_clock_counter)                                            fps_cnt_curr <= 0;
+//     else if((vs_line_resync[2] ^ vs_line_resync[3]) & vs_line_resync[2])    fps_cnt_curr <= fps_cnt_curr + 1;
+// end
+//
 /*END*/
 
 always @(posedge hdmi_clk or negedge hdmi_rst_n) begin
