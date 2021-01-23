@@ -100,10 +100,12 @@ module dsi_host_top(
     input   wire            hdmi_clk                ,
 
     /* I2C ADV */
+    inout   wire            i2c_scl                 ,
+    inout   wire            i2c_sda                 ,
     /* I2C EEPROM */
     /* LED */
     /* UART */
-    input  wire             usart_rxd                     ,
+    input  wire             usart_rxd               ,
     output wire             usart_txd
     /* BUTTON */
     );
@@ -302,6 +304,14 @@ wire [31:0]                        ctrl_pg_writedata;
 wire [3:0]                         ctrl_pg_byteenable;
 wire                               ctrl_pg_waitrequest;
 
+wire                               ctrl_i2c_read;
+wire [31:0]                        ctrl_i2c_readdata;
+wire [1:0]                         ctrl_i2c_response;
+wire                               ctrl_i2c_write;
+wire [31:0]                        ctrl_i2c_writedata;
+wire [3:0]                         ctrl_i2c_byteenable;
+wire                               ctrl_i2c_waitrequest;
+
 wire [32-1:0] irq_vec;
 wire          dsi_irq;
 wire          usart_irq;
@@ -332,7 +342,7 @@ IBUFG #(
     .rst_n_output                (rst_n_in_sync      ),
 
     .pll_1_locked                (sys_pll_locked    ),
-    .pll_2_locked                (c3_calib_done              ),
+    .pll_2_locked                (1'b1              ),
 
     .clk_1_in                    (sys_clk           ),
     .rst_1_out                   (sys_rst_n         ),
@@ -413,6 +423,7 @@ wire [M4_ADDR_WIDTH-1:0]                         ctrl_prog_mem_address;
 wire [M5_ADDR_WIDTH-1:0]                         ctrl_uart_address;
 wire [M1_ADDR_WIDTH-1:0]                         ctrl_hdmi_address;
 wire [M9_ADDR_WIDTH-1:0]                         ctrl_pg_address;
+wire [M6_ADDR_WIDTH-1:0]                         ctrl_i2c_address;
 
 interconnect_mod #(
     .M0_BASE(32'h0000_0000),    //* DDR
@@ -434,7 +445,7 @@ interconnect_mod #(
     .M5_MASK(32'hFFFF_FF00),    //* UART
     .M5_ADDR_W(M5_ADDR_WIDTH),
     .M6_BASE(32'h0100_1500),    //! I2C HDMI
-    .M6_MASK(32'h0000_0000),    //! I2C HDMI
+    .M6_MASK(32'hFFFF_FF00),    //! I2C HDMI
     .M6_ADDR_W(M6_ADDR_WIDTH),
     .M7_BASE(32'h0100_1600),    //! I2C EEPROM
     .M7_MASK(32'h0000_0000),    //! I2C EEPROM
@@ -517,14 +528,14 @@ interconnect_mod #(
     .m5_bus_waitrequest         (ctrl_uart_waitrequest      ),
 
     //* Master port 6
-    .m6_bus_addr                (),
-    .m6_bus_read                (),
-    .m6_bus_readdata            (),
-    .m6_bus_response            (),
-    .m6_bus_write               (),
-    .m6_bus_writedata           (),
-    .m6_bus_byteenable          (),
-    .m6_bus_waitrequest         (1'b0),
+    .m6_bus_addr                (ctrl_i2c_address           ),
+    .m6_bus_read                (ctrl_i2c_read              ),
+    .m6_bus_readdata            (ctrl_i2c_readdata          ),
+    .m6_bus_response            (ctrl_i2c_response          ),
+    .m6_bus_write               (ctrl_i2c_write             ),
+    .m6_bus_writedata           (ctrl_i2c_writedata         ),
+    .m6_bus_byteenable          (ctrl_i2c_byteenable        ),
+    .m6_bus_waitrequest         (ctrl_i2c_waitrequest       ),
 
     //* Master port 7
     .m7_bus_addr                (),
@@ -1125,10 +1136,26 @@ dsi_tx_top #(
 );
 
 //* I2C master ADV
+i2c_master_wrapper i2c_master_wrapper_0(
+    .clk                 (sys_clk              ),
+    .rst_n               (sys_rst_n            ),
+
+    .scl_io              (i2c_scl               ),
+    .sda_io              (i2c_sda               ),
+
+    .ctrl_address        (ctrl_i2c_address      ),
+    .ctrl_read           (ctrl_i2c_read         ),
+    .ctrl_readdata       (ctrl_i2c_readdata     ),
+    .ctrl_response       (ctrl_i2c_response     ),
+    .ctrl_write          (ctrl_i2c_write        ),
+    .ctrl_writedata      (ctrl_i2c_writedata    ),
+    .ctrl_byteenable     (ctrl_i2c_byteenable   ),
+    .ctrl_waitrequest    (ctrl_i2c_waitrequest  )
+    // .irq
+);
+
 //* HDMI Parallel receiver
 //* Stream to AXI DMA
-
-//* I2C master EEPROM
 
 //* Usart RX/TX
 uart_wrapper uart_wrapper_0(
