@@ -191,90 +191,82 @@ GenerateClassCluster=0
 DocumentUniqueId=ARTSGHRA
 
 [GeneratedDocument1]
-DocumentPath=Project Outputs for DSI_host_board\BGA Escape Route - host_board.html
-DItemRevisionGUID=
-
-[GeneratedDocument2]
 DocumentPath=Project Outputs for DSI_host_board\Design Rule Check - host_board.html
 DItemRevisionGUID=
 
-[GeneratedDocument3]
-DocumentPath=Project Outputs for DSI_host_board\DSI_host_board.nsx
-DItemRevisionGUID=
-
-[GeneratedDocument4]
+[GeneratedDocument2]
 DocumentPath=DSI_host_board.sdf
 DItemRevisionGUID=
 
-[GeneratedDocument5]
+[GeneratedDocument3]
 DocumentPath=Project Outputs for DSI_host_board\host_board-RoundHoles.TXT
 DItemRevisionGUID=
 
-[GeneratedDocument6]
+[GeneratedDocument4]
 DocumentPath=Project Outputs for DSI_host_board\host_board-SlotHoles.TXT
 DItemRevisionGUID=
 
-[GeneratedDocument7]
+[GeneratedDocument5]
 DocumentPath=Project Outputs for DSI_host_board\host_board.DRR
 DItemRevisionGUID=
 
-[GeneratedDocument8]
+[GeneratedDocument6]
 DocumentPath=Project Outputs for DSI_host_board\host_board.EXTREP
 DItemRevisionGUID=
 
-[GeneratedDocument9]
+[GeneratedDocument7]
 DocumentPath=Project Outputs for DSI_host_board\host_board.G1
 DItemRevisionGUID=
 
-[GeneratedDocument10]
+[GeneratedDocument8]
 DocumentPath=Project Outputs for DSI_host_board\host_board.G2
 DItemRevisionGUID=
 
-[GeneratedDocument11]
+[GeneratedDocument9]
 DocumentPath=Project Outputs for DSI_host_board\host_board.GBL
 DItemRevisionGUID=
 
-[GeneratedDocument12]
+[GeneratedDocument10]
 DocumentPath=Project Outputs for DSI_host_board\host_board.GBO
 DItemRevisionGUID=
 
-[GeneratedDocument13]
+[GeneratedDocument11]
 DocumentPath=Project Outputs for DSI_host_board\host_board.GBP
 DItemRevisionGUID=
 
-[GeneratedDocument14]
+[GeneratedDocument12]
 DocumentPath=Project Outputs for DSI_host_board\host_board.GBS
 DItemRevisionGUID=
 
-[GeneratedDocument15]
+[GeneratedDocument13]
 DocumentPath=Project Outputs for DSI_host_board\host_board.GM8
 DItemRevisionGUID=
 
-[GeneratedDocument16]
+[GeneratedDocument14]
 DocumentPath=Project Outputs for DSI_host_board\host_board.GTL
 DItemRevisionGUID=
 
-[GeneratedDocument17]
+[GeneratedDocument15]
 DocumentPath=Project Outputs for DSI_host_board\host_board.GTO
 DItemRevisionGUID=
 
-[GeneratedDocument18]
+[GeneratedDocument16]
 DocumentPath=Project Outputs for DSI_host_board\host_board.GTP
 DItemRevisionGUID=
 
-[GeneratedDocument19]
+[GeneratedDocument17]
 DocumentPath=Project Outputs for DSI_host_board\host_board.GTS
 DItemRevisionGUID=
 
-[GeneratedDocument20]
+[GeneratedDocument18]
 DocumentPath=Project Outputs for DSI_host_board\host_board.LDP
 DItemRevisionGUID=
 
-[GeneratedDocument21]
+[GeneratedDocument19]
 DocumentPath=Project Outputs for DSI_host_board\host_board.REP
 DItemRevisionGUID=
 
-[GeneratedDocument22]
+[GeneratedDocument20]
 DocumentPath=Project Outputs for DSI_host_board\host_board.RUL
 DItemRevisionGUID=
 
