@@ -87,9 +87,8 @@ module dsi_host_top(
 	 
 	 reg [24:0] counter;
 	 
-	 always @(posedge clk_in or negedge rst_n_in) begin
-		if(!rst_n_in) counter <= 0;
-		else 			counter <= counter + 1;
+	 always @(posedge clk_in) begin
+			counter <= counter + 1;
 	 end
 	 
 	 assign led_out = counter[24];

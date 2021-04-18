@@ -57,7 +57,7 @@ TIMESPEC TS_sys_clk_i = PERIOD "clk_in" 32 MHz HIGH 50 %;
 NET "clk_in" LOC = T7;
 NET "clk_in" IOSTANDARD = LVCMOS33;
 ## | PULLUP;
-NET "rst_n_in" LOC = A14;
+NET "rst_n_in" LOC = N16;
 NET "rst_n_in" IOSTANDARD = LVCMOS18;
 #############################################################################
 ##NET  "c3_calib_done"                               IOSTANDARD = LVCMOS33 ;
