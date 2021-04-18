@@ -57,7 +57,7 @@ TIMESPEC TS_sys_clk_i = PERIOD "clk_in" 25 MHz HIGH 50 %;
 NET "clk_in" LOC = T7;
 NET "clk_in" IOSTANDARD = LVCMOS33;
 # | PULLUP;
-NET "rst_n_in" LOC = A14;
+NET "rst_n_in" LOC = N16;
 NET "rst_n_in" IOSTANDARD = LVCMOS18;
 ############################################################################
 #NET  "c3_calib_done"                               IOSTANDARD = LVCMOS33 ;
@@ -245,11 +245,8 @@ NET "mcb3_rzq" LOC = M4;
 #ZIO can be moved to any valid package pin (i.e. bonded IO) within the#
 #MCB bank but must be left as a no-connect (NC) pin.#
 ##################################################################################
-NET "mcb3_zio" LOC = M5;
+NET "mcb3_zio" LOC = B3;
 ##################################################################################
-##led_1 signal
-##################################################################################
-#NET "led_1" 												 LOC = T9 	| IOSTANDARD = LVTTL;
 
 #DSI HS LINES
 NET "dphy_clk_hs_out_p" LOC = B15;
@@ -316,7 +313,7 @@ NET "dphy_clk_lp_out_n" LOC = F12;
 NET "dphy_clk_lp_out_n" IOSTANDARD = LVCMOS18;
 
 #HDMI
-NET "hdmi_data[23]" LOC = E8;
+NET "hdmi_data[23]" LOC = E7;
 NET "hdmi_data[23]" IOSTANDARD = LVCMOS33;
 NET "hdmi_data[22]" LOC = D8;
 NET "hdmi_data[22]" IOSTANDARD = LVCMOS33;
@@ -354,7 +351,7 @@ NET "hdmi_data[6]" LOC = C9;
 NET "hdmi_data[6]" IOSTANDARD = LVCMOS33;
 NET "hdmi_data[5]" LOC = A9;
 NET "hdmi_data[5]" IOSTANDARD = LVCMOS33;
-NET "hdmi_data[4]" LOC = E7;
+NET "hdmi_data[4]" LOC = E8;
 NET "hdmi_data[4]" IOSTANDARD = LVCMOS33;
 NET "hdmi_data[3]" LOC = B10;
 NET "hdmi_data[3]" IOSTANDARD = LVCMOS33;
@@ -383,3 +380,6 @@ NET "i2c_sda" IOSTANDARD = LVCMOS33;
 #USART
 NET "usart_rxd" LOC = F9 | IOSTANDARD = LVCMOS33;
 NET "usart_txd" LOC = F10 | IOSTANDARD = LVCMOS33;
+
+#LED
+NET "led_out" LOC = R7 | IOSTANDARD = LVCMOS33;
