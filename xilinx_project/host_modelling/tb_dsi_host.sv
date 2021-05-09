@@ -135,8 +135,8 @@ dsi_host_top dsi_host_top_0(
     .mcb3_dram_dqs_n         (mcb3_dram_dqs_n       ),
     .mcb3_dram_ck            (mcb3_dram_ck          ),
     .mcb3_dram_ck_n          (mcb3_dram_ck_n        ),
-    .rzq3                     (1'b0                 ),
-    .zio3                     (1'b0                 ),
+    // .rzq3                     (1'b0                 ),
+    // .zio3                     (1'b0                 ),
     /* DPHY */
     .dphy_data_hs_out_p      (dphy_data_hs_out_p    ),
     .dphy_data_hs_out_n      (dphy_data_hs_out_n    ),
@@ -157,8 +157,8 @@ dsi_host_top dsi_host_top_0(
     /* I2C EEPROM */
     /* LED */
     /* UART */
-    .rxd                     (rxd                   ),
-    .txd                     (txd                   )
+    .usart_rxd                    (rxd                   ),
+    .usart_txd                    (txd                   )
     /* BUTTON */
     );
 
