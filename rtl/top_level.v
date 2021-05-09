@@ -104,11 +104,14 @@ module dsi_host_top(
     inout   wire            i2c_sda                 ,
     /* I2C EEPROM */
     /* LED */
+    output wire             led_out                 ,
     /* UART */
     input  wire             usart_rxd               ,
     output wire             usart_txd
     /* BUTTON */
     );
+
+// assign led_out = 0;
 
 localparam [ 0:0] ENABLE_COUNTERS = 1;
 localparam [ 0:0] BARREL_SHIFTER = 0;
@@ -120,6 +123,7 @@ localparam [31:0] PROGADDR_RESET =32'h0100_0000;
 localparam [31:0] PROGADDR_IRQ = 32'h0100_0010;
 parameter integer MEM_WORDS = 8192;
 parameter [31:0] STACKADDR = 32'h0000_0000 + (4*MEM_WORDS);       // end of memory
+// parameter [31:0] STACKADDR = 32'h0000_0000 + (1024*4);       // end of memory
 
 wire c3_sys_rst_i;
 wire sys_clk;
@@ -312,6 +316,14 @@ wire [31:0]                        ctrl_i2c_writedata;
 wire [3:0]                         ctrl_i2c_byteenable;
 wire                               ctrl_i2c_waitrequest;
 
+wire                               ctrl_gpio_read;
+wire [31:0]                        ctrl_gpio_readdata;
+wire [1:0]                         ctrl_gpio_response;
+wire                               ctrl_gpio_write;
+wire [31:0]                        ctrl_gpio_writedata;
+wire [3:0]                         ctrl_gpio_byteenable;
+wire                               ctrl_gpio_waitrequest;
+
 wire [32-1:0] irq_vec;
 wire          dsi_irq;
 wire          usart_irq;
@@ -341,8 +353,13 @@ IBUFG #(
 
     .rst_n_output                (rst_n_in_sync      ),
 
-    .pll_1_locked                (sys_pll_locked    ),
-    .pll_2_locked                (1'b1              ),
+`ifdef SIMULATION
+    .pll_1_locked                (sys_pll_locked    ), //
+    .pll_2_locked                (1'b1    ), //
+`else
+    .pll_1_locked                (sys_pll_locked    ), //
+    .pll_2_locked                (c3_calib_done    ), //
+`endif
 
     .clk_1_in                    (sys_clk           ),
     .rst_1_out                   (sys_rst_n         ),
@@ -424,6 +441,7 @@ wire [M5_ADDR_WIDTH-1:0]                         ctrl_uart_address;
 wire [M1_ADDR_WIDTH-1:0]                         ctrl_hdmi_address;
 wire [M9_ADDR_WIDTH-1:0]                         ctrl_pg_address;
 wire [M6_ADDR_WIDTH-1:0]                         ctrl_i2c_address;
+wire [M7_ADDR_WIDTH-1:0]                         ctrl_gpio_address;
 
 interconnect_mod #(
     .M0_BASE(32'h0000_0000),    //* DDR
@@ -447,11 +465,11 @@ interconnect_mod #(
     .M6_BASE(32'h0100_1500),    //! I2C HDMI
     .M6_MASK(32'hFFFF_FF00),    //! I2C HDMI
     .M6_ADDR_W(M6_ADDR_WIDTH),
-    .M7_BASE(32'h0100_1600),    //! I2C EEPROM
-    .M7_MASK(32'h0000_0000),    //! I2C EEPROM
+    .M7_BASE(32'h0100_1600),    //!  GPIO
+    .M7_MASK(32'hFFFF_FF00),    //!  GPIO
     .M7_ADDR_W(M7_ADDR_WIDTH),
-    .M8_BASE(32'h0100_1700),    //! GPIO
-    .M8_MASK(32'h0000_0000),    //! GPIO
+    .M8_BASE(32'h0100_1700),    //!
+    .M8_MASK(32'hFFFF_FF00),    //!
     .M8_ADDR_W(M8_ADDR_WIDTH),
     .M9_BASE(32'h0100_1100),    //! PATTERN GENERATOR
     .M9_MASK(32'hFFFF_FF00),    //! PATTERN GENERATOR
@@ -538,14 +556,14 @@ interconnect_mod #(
     .m6_bus_waitrequest         (ctrl_i2c_waitrequest       ),
 
     //* Master port 7
-    .m7_bus_addr                (),
-    .m7_bus_read                (),
-    .m7_bus_readdata            (),
-    .m7_bus_response            (),
-    .m7_bus_write               (),
-    .m7_bus_writedata           (),
-    .m7_bus_byteenable          (),
-    .m7_bus_waitrequest         (1'b0),
+    .m7_bus_addr                (ctrl_gpio_address      ),
+    .m7_bus_read                (ctrl_gpio_read         ),
+    .m7_bus_readdata            (ctrl_gpio_readdata     ),
+    .m7_bus_response            (ctrl_gpio_response     ),
+    .m7_bus_write               (ctrl_gpio_write        ),
+    .m7_bus_writedata           (ctrl_gpio_writedata    ),
+    .m7_bus_byteenable          (ctrl_gpio_byteenable   ),
+    .m7_bus_waitrequest         (ctrl_gpio_waitrequest  ),
 
     //* Master port 8
     .m8_bus_addr                (),
@@ -567,6 +585,44 @@ interconnect_mod #(
     .m9_bus_byteenable          (ctrl_pg_byteenable     ),
     .m9_bus_waitrequest         (ctrl_pg_waitrequest    )
 );
+
+//* GPIO
+
+reg [31:0] gpio_reg;
+
+always @(posedge sys_clk or negedge sys_rst_n) begin
+    if(!sys_rst_n)              gpio_reg <= 'b0;
+    else if(ctrl_gpio_write)    gpio_reg <= ctrl_gpio_writedata;
+end
+
+assign ctrl_gpio_waitrequest = 0;
+assign ctrl_gpio_readdata = 0;
+assign ctrl_gpio_response = 0;
+
+assign led_out = gpio_reg[0];
+
+reg [24:0] counter;
+reg led_state;
+
+always @(posedge sys_clk or negedge sys_rst_n) begin
+    if(!sys_rst_n)   begin
+        counter <= 'b0;
+        led_state <= 'b0;
+    end
+    else begin
+        if(counter == 9280000) begin
+            counter <= 0;
+            led_state <= ~led_state;
+        end
+        else
+            counter <= counter + 1;
+
+    end
+end
+
+// assign led_out = led_state;
+// assign led_out = sys_pll_locked;
+// assign led_out = c3_calib_done;
 
 //* Prosessor to AXI bridge
 core_axi_bridge core_axi_bridge_0(
@@ -792,6 +848,41 @@ axi4_slave_vip  slave_ro(
 
 `else
 
+
+//  ram_mem_2 ram_mem_2_inst(
+//   .s_aclk           (sys_clk                ),
+//   .s_aresetn        (sys_rst_n              ),
+//   .s_axi_awid       (mst_core_axi_awid      ),
+//   .s_axi_awaddr     (mst_core_axi_awaddr    ),
+//   .s_axi_awlen      (mst_core_axi_awlen     ),
+//   .s_axi_awsize     (mst_core_axi_awsize    ),
+//   .s_axi_awburst    (mst_core_axi_awburst   ),
+//   .s_axi_awvalid    (mst_core_axi_awvalid   ),
+//   .s_axi_awready    (mst_core_axi_awready   ),
+//   .s_axi_wdata      (mst_core_axi_wdata     ),
+//   .s_axi_wstrb      (mst_core_axi_wstrb     ),
+//   .s_axi_wlast      (mst_core_axi_wlast     ),
+//   .s_axi_wvalid     (mst_core_axi_wvalid    ),
+//   .s_axi_wready     (mst_core_axi_wready    ),
+//   .s_axi_bid        (mst_core_axi_bid       ),
+//   .s_axi_bresp      (mst_core_axi_bresp     ),
+//   .s_axi_bvalid     (mst_core_axi_bvalid    ),
+//   .s_axi_bready     (mst_core_axi_bready    ),
+//   .s_axi_arid       (mst_core_axi_arid      ),
+//   .s_axi_araddr     (mst_core_axi_araddr    ),
+//   .s_axi_arlen      (mst_core_axi_arlen     ),
+//   .s_axi_arsize     (mst_core_axi_arsize    ),
+//   .s_axi_arburst    (mst_core_axi_arburst   ),
+//   .s_axi_arvalid    (mst_core_axi_arvalid   ),
+//   .s_axi_arready    (mst_core_axi_arready   ),
+//   .s_axi_rid        (mst_core_axi_rid       ),
+//   .s_axi_rdata      (mst_core_axi_rdata     ),
+//   .s_axi_rresp      (mst_core_axi_rresp     ),
+//   .s_axi_rlast      (mst_core_axi_rlast     ),
+//   .s_axi_rvalid     (mst_core_axi_rvalid    ),
+//   .s_axi_rready     (mst_core_axi_rready    )
+// );
+
 //* DDR3 controller
 mig_ddr3 # (
     .C3_P0_MASK_SIZE(4),
@@ -856,46 +947,46 @@ u_mig_ddr3 (
     .mcb3_rzq               (mcb3_rzq   ),   //(rzq3),
     .mcb3_zio               (mcb3_zio   ),   //(zio3),
 
-    .c3_s0_axi_aclk                         (sys_clk                ),
-    .c3_s0_axi_aresetn                      (sys_rst_n              ),
-    .c3_s0_axi_awid                         (mst_core_axi_awid      ),
-    .c3_s0_axi_awaddr                       (mst_core_axi_awaddr    ),
-    .c3_s0_axi_awlen                        (mst_core_axi_awlen     ),
-    .c3_s0_axi_awsize                       (mst_core_axi_awsize    ),
-    .c3_s0_axi_awburst                      (mst_core_axi_awburst   ),
-    .c3_s0_axi_awlock                       (mst_core_axi_awlock    ),
-    .c3_s0_axi_awcache                      (mst_core_axi_awcache   ),
-    .c3_s0_axi_awprot                       (mst_core_axi_awprot    ),
-    .c3_s0_axi_awqos                        (mst_core_axi_awqos     ),
-    .c3_s0_axi_awvalid                      (mst_core_axi_awvalid   ),
-    .c3_s0_axi_awready                      (mst_core_axi_awready   ),
-    .c3_s0_axi_wdata                        (mst_core_axi_wdata     ),
-    .c3_s0_axi_wstrb                        (mst_core_axi_wstrb     ),
-    .c3_s0_axi_wlast                        (mst_core_axi_wlast     ),
-    .c3_s0_axi_wvalid                       (mst_core_axi_wvalid    ),
-    .c3_s0_axi_wready                       (mst_core_axi_wready    ),
-    .c3_s0_axi_bid                          (mst_core_axi_bid       ),
-    .c3_s0_axi_wid                          (mst_core_axi_wid       ),
-    .c3_s0_axi_bresp                        (mst_core_axi_bresp     ),
-    .c3_s0_axi_bvalid                       (mst_core_axi_bvalid    ),
-    .c3_s0_axi_bready                       (mst_core_axi_bready    ),
-    .c3_s0_axi_arid                         (mst_core_axi_arid      ),
-    .c3_s0_axi_araddr                       (mst_core_axi_araddr    ),
-    .c3_s0_axi_arlen                        (mst_core_axi_arlen     ),
-    .c3_s0_axi_arsize                       (mst_core_axi_arsize    ),
-    .c3_s0_axi_arburst                      (mst_core_axi_arburst   ),
-    .c3_s0_axi_arlock                       (mst_core_axi_arlock    ),
-    .c3_s0_axi_arcache                      (mst_core_axi_arcache   ),
-    .c3_s0_axi_arprot                       (mst_core_axi_arprot    ),
-    .c3_s0_axi_arqos                        (mst_core_axi_arqos     ),
-    .c3_s0_axi_arvalid                      (mst_core_axi_arvalid   ),
-    .c3_s0_axi_arready                      (mst_core_axi_arready   ),
-    .c3_s0_axi_rid                          (mst_core_axi_rid       ),
-    .c3_s0_axi_rdata                        (mst_core_axi_rdata     ),
-    .c3_s0_axi_rresp                        (mst_core_axi_rresp     ),
-    .c3_s0_axi_rlast                        (mst_core_axi_rlast     ),
-    .c3_s0_axi_rvalid                       (mst_core_axi_rvalid    ),
-    .c3_s0_axi_rready                       (mst_core_axi_rready    ),
+   .c3_s0_axi_aclk                         (sys_clk                ),
+   .c3_s0_axi_aresetn                      (sys_rst_n              ),
+   .c3_s0_axi_awid                         (mst_core_axi_awid      ),
+   .c3_s0_axi_awaddr                       (mst_core_axi_awaddr    ),
+   .c3_s0_axi_awlen                        (mst_core_axi_awlen     ),
+   .c3_s0_axi_awsize                       (mst_core_axi_awsize    ),
+   .c3_s0_axi_awburst                      (mst_core_axi_awburst   ),
+   .c3_s0_axi_awlock                       (mst_core_axi_awlock    ),
+   .c3_s0_axi_awcache                      (mst_core_axi_awcache   ),
+   .c3_s0_axi_awprot                       (mst_core_axi_awprot    ),
+   .c3_s0_axi_awqos                        (mst_core_axi_awqos     ),
+   .c3_s0_axi_awvalid                      (mst_core_axi_awvalid   ),
+   .c3_s0_axi_awready                      (mst_core_axi_awready   ),
+   .c3_s0_axi_wdata                        (mst_core_axi_wdata     ),
+   .c3_s0_axi_wstrb                        (mst_core_axi_wstrb     ),
+   .c3_s0_axi_wlast                        (mst_core_axi_wlast     ),
+   .c3_s0_axi_wvalid                       (mst_core_axi_wvalid    ),
+   .c3_s0_axi_wready                       (mst_core_axi_wready    ),
+   .c3_s0_axi_bid                          (mst_core_axi_bid       ),
+   .c3_s0_axi_wid                          (mst_core_axi_wid       ),
+   .c3_s0_axi_bresp                        (mst_core_axi_bresp     ),
+   .c3_s0_axi_bvalid                       (mst_core_axi_bvalid    ),
+   .c3_s0_axi_bready                       (mst_core_axi_bready    ),
+   .c3_s0_axi_arid                         (mst_core_axi_arid      ),
+   .c3_s0_axi_araddr                       (mst_core_axi_araddr    ),
+   .c3_s0_axi_arlen                        (mst_core_axi_arlen     ),
+   .c3_s0_axi_arsize                       (mst_core_axi_arsize    ),
+   .c3_s0_axi_arburst                      (mst_core_axi_arburst   ),
+   .c3_s0_axi_arlock                       (mst_core_axi_arlock    ),
+   .c3_s0_axi_arcache                      (mst_core_axi_arcache   ),
+   .c3_s0_axi_arprot                       (mst_core_axi_arprot    ),
+   .c3_s0_axi_arqos                        (mst_core_axi_arqos     ),
+   .c3_s0_axi_arvalid                      (mst_core_axi_arvalid   ),
+   .c3_s0_axi_arready                      (mst_core_axi_arready   ),
+   .c3_s0_axi_rid                          (mst_core_axi_rid       ),
+   .c3_s0_axi_rdata                        (mst_core_axi_rdata     ),
+   .c3_s0_axi_rresp                        (mst_core_axi_rresp     ),
+   .c3_s0_axi_rlast                        (mst_core_axi_rlast     ),
+   .c3_s0_axi_rvalid                       (mst_core_axi_rvalid    ),
+   .c3_s0_axi_rready                       (mst_core_axi_rready    ),
 
     //* Write only Port
     .c3_s2_axi_aclk                         (sys_clk            ),
@@ -1191,6 +1282,8 @@ progmem_wrapper progmem_wrapper_0(
     .ctrl_read               (ctrl_prog_mem_read          ),
     .ctrl_readdata           (ctrl_prog_mem_readdata      ),
     .ctrl_response           (ctrl_prog_mem_response      ),
+    .ctrl_write              (ctrl_prog_mem_write         ),
+    .ctrl_writedata          (ctrl_prog_mem_writedata     ),
     .ctrl_waitrequest        (ctrl_prog_mem_waitrequest   )
 );
 
@@ -1229,14 +1322,15 @@ pattern_generator  #(
 
 //* Clocking
 //* Main PLL (sys clock + dphy)
+// 32 * 29 = 928
 wire CLKFBOUT;
 wire CLKFBIN;
-wire CLKOUT0; //* 600 MHz
-wire CLKOUT1; //* 600 with shift
-wire CLKOUT2; //*  75MHz = CLKOUT0 / 8
-wire CLKOUT3; //* 100 MHZ
-wire CLKOUT4; //* 25 MHz
-wire CLKOUT5; //* 100 MHz for DDR
+wire CLKOUT0; //* 464 MHz   928/2
+wire CLKOUT1; //* 464 with shift
+wire CLKOUT2; //*  52MHz = CLKOUT0 / 8
+wire CLKOUT3; //* 92.8 MHZ
+wire CLKOUT4; //* 32 MHz
+wire CLKOUT5; //* 333 MHz for DDR
 
 `ifdef SPARTAN7
 clk_wiz_0 main_pll(
@@ -1244,6 +1338,7 @@ clk_wiz_0 main_pll(
     .clk_out2   (dsi_io_clk),
     .clk_out3   (dsi_io_clk_clk),
     .clk_out4   (dsi_phy_clk),
+    .clk_out5   (clk_in_sync),
     .reset      (!rst_n_in),
     .locked     (sys_pll_locked     ),
     .clk_in1    (clk_in             )
@@ -1261,17 +1356,17 @@ IBUFG #(
 
 PLL_BASE #(
     .BANDWIDTH("OPTIMIZED"),             // "HIGH", "LOW" or "OPTIMIZED"
-    .CLKFBOUT_MULT(24),                   // Multiply value for all CLKOUT clock outputs (1-64)
+    .CLKFBOUT_MULT(29),                   // Multiply value for all CLKOUT clock outputs (1-64)
     .CLKFBOUT_PHASE(0.0),                // Phase offset in degrees of the clock feedback output (0.0-360.0).
-    .CLKIN_PERIOD(40),                  // Input clock period in ns to ps resolution (i.e. 33.333 is 30
+    .CLKIN_PERIOD(31.25),                  // Input clock period in ns to ps resolution (i.e. 33.333 is 30
                                          // MHz).
     // CLKOUT0_DIVIDE - CLKOUT5_DIVIDE: Divide amount for CLKOUT# clock output (1-128)
-    .CLKOUT0_DIVIDE(1),
-    .CLKOUT1_DIVIDE(1),
-    .CLKOUT2_DIVIDE(8),
-    .CLKOUT3_DIVIDE(6),
-    .CLKOUT4_DIVIDE(24),
-    .CLKOUT5_DIVIDE(6),
+    .CLKOUT0_DIVIDE(2),
+    .CLKOUT1_DIVIDE(2),
+    .CLKOUT2_DIVIDE(16),
+    .CLKOUT3_DIVIDE(10),
+    .CLKOUT4_DIVIDE(29),
+    .CLKOUT5_DIVIDE(3),
     // CLKOUT0_DUTY_CYCLE - CLKOUT5_DUTY_CYCLE: Duty cycle for CLKOUT# clock output (0.01-0.99).
     .CLKOUT0_DUTY_CYCLE(0.5),
     .CLKOUT1_DUTY_CYCLE(0.5),
