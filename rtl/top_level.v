@@ -122,8 +122,8 @@ localparam [ 0:0] ENABLE_IRQ_QREGS = 1;
 localparam [31:0] PROGADDR_RESET =32'h0100_0000;
 localparam [31:0] PROGADDR_IRQ = 32'h0100_0010;
 parameter integer MEM_WORDS = 8192;
-// parameter [31:0] STACKADDR = 32'h0100_0000 + (4*MEM_WORDS);
-parameter [31:0] STACKADDR = 32'h0100_0600;       // end of memory
+parameter [31:0] STACKADDR = 32'h0000_0000 + (4*MEM_WORDS);
+// parameter [31:0] STACKADDR = 32'h0100_0600;       // end of memory
 
 wire c3_sys_rst_i;
 wire sys_clk;
