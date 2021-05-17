@@ -81,7 +81,7 @@ int main(void)
     volatile uint32_t z = 0x01000800;
     volatile int ind;
     volatile uint32_t read_reg;
-    volatile uint8_t data_to_send = 0;
+    volatile uint8_t data_to_send = 0xAA;
 
     // WRITE_REG(OUTPORT, 0x1234);
 
@@ -113,7 +113,11 @@ int main(void)
     {
         UART->usart_reg_txd = data_to_send;
         data_to_send++;
-        while(UART->usart_reg_isr & (1 << 5)) {}
+        while(UART->usart_reg_isr & (0x20)) {
+            WRITE_REG(0x01010600, 1);
+            WRITE_REG(0x01010600, 0);
+        }
+        UART->usart_reg_isr |= (0x20);
     }
 
 

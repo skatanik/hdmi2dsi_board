@@ -159,6 +159,8 @@ dsi_host_top dsi_host_top_0(
     /* BUTTON */
     );
 
+assign rxd = txd;
+
 integer debug_symbol;
 
 always @(negedge dsi_host_top_0.picorv32_core.clk) begin

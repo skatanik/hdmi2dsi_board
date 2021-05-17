@@ -259,13 +259,11 @@ assign uart_reg_isr = {
 
 always @(posedge clk or negedge rst_n)
     if(!rst_n)                                      uart_reg_isr_tx_busy                <= 1'b0;
-    else if(uart_reg_isr_w & sys_write_data[5])     uart_reg_isr_tx_busy                <= 1'b0;
-    else if(tx_busy         )                       uart_reg_isr_tx_busy                <= 1'b1;
+    else                                            uart_reg_isr_tx_busy                <= tx_busy;
 
 always @(posedge clk or negedge rst_n)
     if(!rst_n)                                      uart_reg_isr_rx_busy                <= 1'b0;
-    else if(uart_reg_isr_w & sys_write_data[4])     uart_reg_isr_rx_busy                <= 1'b0;
-    else if(rx_busy         )                       uart_reg_isr_rx_busy                <= 1'b1;
+    else                                            uart_reg_isr_rx_busy                <= rx_busy;
 
 always @(posedge clk or negedge rst_n)
     if(!rst_n)                                      uart_reg_isr_rx_overrun_error       <= 1'b0;
@@ -376,16 +374,16 @@ always @(posedge clk or negedge rst_n)
     if(!rst_n)                  r_uart_reg_txd <= 8'd0;
     else if(uart_reg_txd_w)     r_uart_reg_txd <= sys_write_data[7:0];
 
-assign data_tx = uart_reg_txd_r;
+assign data_tx = r_uart_reg_txd;
 
-reg set_txd_ready;
+reg set_txd_wr_del;
 
 always @(posedge clk or negedge rst_n)
-    if(!rst_n)                set_txd_ready <= 1'b0;
-    else if(uart_reg_txd_w)   set_txd_ready <= 1'b1;
-    else if(data_tx_ack)      set_txd_ready <= 1'b0;
+    if(!rst_n)                set_txd_wr_del <= 1'b0;
+    else if(uart_reg_txd_w)   set_txd_wr_del <= 1'b1;
+    else                      set_txd_wr_del <= 1'b0;
 
-assign data_tx_wr = set_txd_ready;
+assign data_tx_wr = set_txd_wr_del;
 
 /********************************************************************
 reg:        TR2
