@@ -154,8 +154,8 @@ dsi_host_top dsi_host_top_0(
     /* I2C EEPROM */
     /* LED */
     /* UART */
-    .rxd                     (rxd                   ),
-    .txd                     (txd                   )
+    .usart_rxd                     (rxd                   ),
+    .usart_txd                     (txd                   )
     /* BUTTON */
     );
 

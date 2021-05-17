@@ -9,19 +9,19 @@
  */
 
 #include <stdint.h>
-#include <stdio.h>
+// #include <stdio.h>
 
 #define OUTPORT 0x10000000
 #define WRITE_REG(x,y)          *((volatile uint32_t*)x) = (uint32_t)y
 #define READ_REG(x,y)           y = (uint32_t)*((volatile uint32_t*)x)
 
-#ifdef __GNUC__
+// #ifdef __GNUC__
 /* With GCC, small printf (option LD Linker->Libraries->Small printf
    set to 'Yes') calls __io_putchar() */
-#define PUTCHAR_PROTOTYPE int __io_putchar(int ch)
-#else
-#define PUTCHAR_PROTOTYPE int fputc(int ch, FILE *f)
-#endif /* __GNUC__ */
+// #define PUTCHAR_PROTOTYPE int __io_putchar(int ch)
+// #else
+// #define PUTCHAR_PROTOTYPE int fputc(int ch, FILE *f)
+// #endif /* __GNUC__ */
 
 typedef struct
 {
@@ -52,14 +52,24 @@ typedef struct
     volatile uint32_t dsi_reg_cmd;
 }td_dsi_struct;
 
+typedef struct
+{
+    volatile uint32_t usart_reg_cr;
+    volatile uint32_t usart_reg_isr;
+    volatile uint32_t usart_reg_ier;
+    volatile uint32_t usart_reg_rxd;
+    volatile uint32_t usart_reg_txd;
+    volatile uint32_t usart_reg_prsc;
+}td_usart_struct;
 
-#define HDMI_RECV  ((td_hdmi_recv_struct *) 0x01001000)
-#define DSI  ((td_dsi_struct *) 0x01001300)
-#define PIX_READER  ((td_axi2stream_struct *) 0x01001200)
-#define UART  ((td_hdmi_recv_struct *) 0x01001400)
-#define I2C_HDMI  ((td_hdmi_recv_struct *) 0x01001500)
-#define I2C_EEPROM  ((td_hdmi_recv_struct *) 0x1001600)
-#define GPIO  ((td_hdmi_recv_struct *) 0x01001700)
+
+#define HDMI_RECV  ((td_hdmi_recv_struct *) 0x01010000)
+#define DSI  ((td_dsi_struct *) 0x01010300)
+#define PIX_READER  ((td_axi2stream_struct *) 0x01010200)
+#define UART  ((td_usart_struct *) 0x01010400)
+#define I2C_HDMI  ((td_hdmi_recv_struct *) 0x01010500)
+#define I2C_EEPROM  ((td_hdmi_recv_struct *) 0x1010600)
+#define GPIO  ((td_hdmi_recv_struct *) 0x01010700)
 
 /*
  */
@@ -68,7 +78,10 @@ typedef struct
 int main(void)
 {
     volatile uint32_t y;
-    volatile uint32_t z;
+    volatile uint32_t z = 0x01000800;
+    volatile int ind;
+    volatile uint32_t read_reg;
+    volatile uint8_t data_to_send = 0;
 
     // WRITE_REG(OUTPORT, 0x1234);
 
@@ -76,25 +89,55 @@ int main(void)
 
     // WRITE_REG(OUTPORT, 0xffff);
 
+    // for(ind = 0; ind < 512; ind ++)
+    // {
+    //     WRITE_REG(z, ind);
+    //     READ_REG(z, read_reg);
+    //     if(ind != read_reg)
+    //     {
+    //         while(1)
+    //         {
+    //             WRITE_REG(0x01010600, 1);
+    //             for (y = 0; y < 50000; y++) {y++; y--;}
+    //             WRITE_REG(0x01010600, 0);
+    //             for (y = 0; y < 50000; y++) {y++; y--;}
+    //         }
+    //     }
+    //     z += 0x4;
+    // }
+
+    UART->usart_reg_prsc = 10;
+    UART->usart_reg_cr |= 0x3;
+
     while (1)
     {
-
-        WRITE_REG(0x01001600, 1);
-        for (y = 0; y < 100000; y++) {y++; y--;}
-        WRITE_REG(0x01001600, 0);
-        for (y = 0; y < 100000; y++) {y++; y--;}
-        WRITE_REG(0x01001600, 1);
-        for (y = 0; y < 100000; y++) {y++; y--;}
-        WRITE_REG(0x01001600, 0);
-        for (y = 0; y < 100000; y++) {y++; y--;}
-        WRITE_REG(0x01001600, 1);
-        for (y = 0; y < 200000; y++) {y++; y--;}
-        WRITE_REG(0x01001600, 0);
-        for (y = 0; y < 100000; y++) {y++; y--;}
-
-        // printf("Hello");
-
+        UART->usart_reg_txd = data_to_send;
+        data_to_send++;
+        while(UART->usart_reg_isr & (1 << 5)) {}
     }
+
+
+    // while (1)
+    // {
+
+    //     WRITE_REG(0x01010600, 1);
+
+    //     // printf("Hello");
+
+    //     for (y = 0; y < 100000; y++) {y++; y--;}
+    //     WRITE_REG(0x01010600, 0);
+    //     for (y = 0; y < 100000; y++) {y++; y--;}
+    //     WRITE_REG(0x01010600, 1);
+    //     for (y = 0; y < 100000; y++) {y++; y--;}
+    //     WRITE_REG(0x01010600, 0);
+    //     for (y = 0; y < 100000; y++) {y++; y--;}
+    //     WRITE_REG(0x01010600, 1);
+    //     for (y = 0; y < 200000; y++) {y++; y--;}
+    //     WRITE_REG(0x01010600, 0);
+    //     for (y = 0; y < 100000; y++) {y++; y--;}
+
+
+    // }
 
 
 
@@ -148,8 +191,8 @@ int main(void)
   return 0;
 }
 
-PUTCHAR_PROTOTYPE
-{
-    WRITE_REG(OUTPORT, ch);
-    return ch;
-}
+// PUTCHAR_PROTOTYPE
+// {
+//     WRITE_REG(OUTPORT, ch);
+//     return ch;
+// }

@@ -7,7 +7,7 @@ module progmem_wrapper(
 `ifdef SPARTAN7
     input   wire [11:0]             ctrl_address            ,
 `else
-    input   wire [11:0]              ctrl_address            ,
+    input   wire [13-1:0]              ctrl_address            ,
 `endif
 
     input   wire                    ctrl_read               ,
@@ -15,6 +15,7 @@ module progmem_wrapper(
     output  wire [1:0]              ctrl_response           ,
 
     input   wire                    ctrl_write              ,
+    input   wire  [3:0]             ctrl_byteenable              ,
     input   wire  [31:0]            ctrl_writedata          ,
 
     output  wire                    ctrl_waitrequest
@@ -24,11 +25,11 @@ assign ctrl_response = 0;
 
 reg[1:0] r_ctrl_waitrequest;
 
-assign ctrl_waitrequest = ctrl_read && !r_ctrl_waitrequest[1];
+assign ctrl_waitrequest = (ctrl_read || ctrl_write) && !r_ctrl_waitrequest[1];
 
 always @(posedge clk or negedge rst_n) begin
     if(!rst_n)                                  r_ctrl_waitrequest <= 2'b0;
-    else if(ctrl_read)                          r_ctrl_waitrequest <= {r_ctrl_waitrequest[0], 1'b1};
+    else if(ctrl_read || ctrl_write)            r_ctrl_waitrequest <= {r_ctrl_waitrequest[0], 1'b1};
     else if(r_ctrl_waitrequest[1])              r_ctrl_waitrequest <= 2'b0;
 end
 
@@ -46,11 +47,12 @@ prgr_rom_s7 prgr_rom_0(
 
 prgr_rom prgr_rom_0 (
   .clka(clk), // input clka
+  .rsta     (!rst_n),
 //   .ena(1'b1), // input ena
-  .addra({20'b0, ctrl_address}), // input [31 : 0] addra
+  .addra({19'b0, ctrl_address}), // input [31 : 0] addra
   .douta(ctrl_readdata), // output [31 : 0] douta
   .dina     (ctrl_writedata),
-  .wea      (ctrl_write)
+  .wea      (ctrl_byteenable & {4{ctrl_write}})
 );
 
 `endif

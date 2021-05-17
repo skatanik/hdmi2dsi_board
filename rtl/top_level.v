@@ -122,8 +122,8 @@ localparam [ 0:0] ENABLE_IRQ_QREGS = 1;
 localparam [31:0] PROGADDR_RESET =32'h0100_0000;
 localparam [31:0] PROGADDR_IRQ = 32'h0100_0010;
 parameter integer MEM_WORDS = 8192;
-parameter [31:0] STACKADDR = 32'h0000_0000 + (4*MEM_WORDS);
-// parameter [31:0] STACKADDR = 32'h0100_0600;       // end of memory
+// parameter [31:0] STACKADDR = 32'h0000_0000 + (4*MEM_WORDS);
+parameter [31:0] STACKADDR = 32'h0100_0800;       // end of memory
 
 wire c3_sys_rst_i;
 wire sys_clk;
@@ -411,22 +411,22 @@ Memory Map
 BASE ADDR           MASK          SIZE         COMMENT
 ------------------------------------------------------------
 0x0000_0000     0xFFFC_0000       2^18          DDR
-0x0100_0000     0xFFFF_F000       2^12          PROG_MEM
-0x0100_1000     0xFFFF_FF00       2^8           HDMI
-0x0100_1100     0xFFFF_FF00       2^8           PATTERN GENERATOR
-0x0100_1200     0xFFFF_FF00       2^8           PIX READER
-0x0100_1300     0xFFFF_FF00       2^8           DSI
-0x0100_1400     0xFFFF_FF00       2^8           USART
-0x0100_1500     0xFFFF_FF00       2^8           I2C HDMI
-0x0100_1600     0xFFFF_FF00       2^8           I2C EEPROM
-0x0100_1700     0xFFFF_FF00       2^8           GPIO
+0x0100_0000     0xFFFF_E000       2^12          PROG_MEM
+0x0101_0000     0xFFFF_FF00       2^8           HDMI
+0x0101_0100     0xFFFF_FF00       2^8           PATTERN GENERATOR
+0x0101_0200     0xFFFF_FF00       2^8           PIX READER
+0x0101_0300     0xFFFF_FF00       2^8           DSI
+0x0101_0400     0xFFFF_FF00       2^8           USART
+0x0101_0500     0xFFFF_FF00       2^8           I2C HDMI
+0x0101_0600     0xFFFF_FF00       2^8           I2C EEPROM
+0x0101_0700     0xFFFF_FF00       2^8           GPIO
 */
 
 parameter M0_ADDR_WIDTH = 18;//$clog2(!(32'hFFFC_0000));
 parameter M1_ADDR_WIDTH = 8;//$clog2(!(32'hFFFF_FF00));
 parameter M2_ADDR_WIDTH = 8;//$clog2(!(32'hFFFF_FF00));
 parameter M3_ADDR_WIDTH = 8;//$clog2(!(32'hFFFF_FF00));
-parameter M4_ADDR_WIDTH = 12;//$clog2(!(32'hFFFF_FC00));
+parameter M4_ADDR_WIDTH = 13;//$clog2(!(32'hFFFF_E000));
 parameter M5_ADDR_WIDTH = 8;//$clog2(!(32'hFFFF_FF00));
 parameter M6_ADDR_WIDTH = 8;//$clog2(!(32'hFFFF_FF00));
 parameter M7_ADDR_WIDTH = 8;//$clog2(!(32'hFFFF_FF00));
@@ -450,28 +450,28 @@ interconnect_mod #(
     .M1_BASE(32'h0100_1000),    // HDMI
     .M1_MASK(32'hFFFF_FF00),    // HDMI
     .M1_ADDR_W(M1_ADDR_WIDTH),
-    .M2_BASE(32'h0100_1200),    //* PIX READER
+    .M2_BASE(32'h0101_0200),    //* PIX READER
     .M2_MASK(32'hFFFF_FF00),    //* PIX READER
     .M2_ADDR_W(M2_ADDR_WIDTH),
-    .M3_BASE(32'h0100_1300),    //* DSI
+    .M3_BASE(32'h0101_0300),    //* DSI
     .M3_MASK(32'hFFFF_FF00),    //* DSI
     .M3_ADDR_W(M3_ADDR_WIDTH),
     .M4_BASE(32'h0100_0000),    //* PROG MEM
-    .M4_MASK(32'hFFFF_F000),    //* PROG MEM
+    .M4_MASK(32'hFFFF_E000),    //* PROG MEM
     .M4_ADDR_W(M4_ADDR_WIDTH),
-    .M5_BASE(32'h0100_1400),    //* UART
+    .M5_BASE(32'h0101_0400),    //* UART
     .M5_MASK(32'hFFFF_FF00),    //* UART
     .M5_ADDR_W(M5_ADDR_WIDTH),
-    .M6_BASE(32'h0100_1500),    //! I2C HDMI
+    .M6_BASE(32'h0101_0500),    //! I2C HDMI
     .M6_MASK(32'hFFFF_FF00),    //! I2C HDMI
     .M6_ADDR_W(M6_ADDR_WIDTH),
-    .M7_BASE(32'h0100_1600),    //!  GPIO
+    .M7_BASE(32'h0101_0600),    //!  GPIO
     .M7_MASK(32'hFFFF_FF00),    //!  GPIO
     .M7_ADDR_W(M7_ADDR_WIDTH),
-    .M8_BASE(32'h0100_1700),    //!
+    .M8_BASE(32'h0101_0700),    //!
     .M8_MASK(32'hFFFF_FF00),    //!
     .M8_ADDR_W(M8_ADDR_WIDTH),
-    .M9_BASE(32'h0100_1100),    //! PATTERN GENERATOR
+    .M9_BASE(32'h0101_0100),    //! PATTERN GENERATOR
     .M9_MASK(32'hFFFF_FF00),    //! PATTERN GENERATOR
     .M9_ADDR_W(M9_ADDR_WIDTH)
 )interconnect_mod_0(
@@ -1284,6 +1284,7 @@ progmem_wrapper progmem_wrapper_0(
     .ctrl_response           (ctrl_prog_mem_response      ),
     .ctrl_write              (ctrl_prog_mem_write         ),
     .ctrl_writedata          (ctrl_prog_mem_writedata     ),
+    .ctrl_byteenable         (ctrl_prog_mem_byteenable     ),
     .ctrl_waitrequest        (ctrl_prog_mem_waitrequest   )
 );
 

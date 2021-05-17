@@ -22,6 +22,7 @@ prgr_rom.mif: firmware.bin
 	python3 makemif.py $^ 256 > $@
 	cp -r prgr_rom.mif ./../../xilinx_project/vivado_test/vivado_test.ip_user_files/mem_init_files/prgr_rom_s7.mif
 	cp -r prgr_rom.mif ./../../xilinx_project/vivado_test/vivado_test.sim/sim_1/behav/modelsim/prgr_rom_s7.mif
+	cp -r prgr_rom.mif ./../../xilinx_project/dsi_host/ipcore_dir/prgr_rom.mif
 
 clean:
 	rm -r *.coe *.bin *.elf

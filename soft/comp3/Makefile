@@ -35,6 +35,7 @@ $(OUTPUT): $(LDS) $(OBJS)
 prgr_rom.mif: $(OUTPUT).bin
 	python3 makehex.py $^ 512 > $(OUTPUT).coe
 	python3 makemif.py $^ 512 > $@
+	cp -r prgr_rom.mif ./../../xilinx_project/dsi_host/ipcore_dir/prgr_rom.mif
 # cp -r prgr_rom.mif ./../../xilinx_project/vivado_test/vivado_test.ip_user_files/mem_init_files/prgr_rom_s7.mif
 # cp -r prgr_rom.mif ./../../xilinx_project/vivado_test/vivado_test.sim/sim_1/behav/modelsim/prgr_rom_s7.mif
 
