@@ -53,7 +53,7 @@ CONFIG MCB_PERFORMANCE  = EXTENDED;
 ## Clock constraints
 ############################################################################
 NET "clk_in" TNM_NET = "clk_in";
-TIMESPEC TS_sys_clk_i = PERIOD "clk_in" 25 MHz HIGH 50 %;
+TIMESPEC TS_sys_clk_i = PERIOD "clk_in" 32 MHz HIGH 50 %;
 NET "clk_in" LOC = T7;
 NET "clk_in" IOSTANDARD = LVCMOS33;
 # | PULLUP;
@@ -378,8 +378,8 @@ NET "i2c_sda" LOC = A13;
 NET "i2c_sda" IOSTANDARD = LVCMOS33;
 
 #USART
-NET "usart_rxd" LOC = F9 | IOSTANDARD = LVCMOS33;
-NET "usart_txd" LOC = F10 | IOSTANDARD = LVCMOS33;
+NET "usart_rxd" LOC = F10 | IOSTANDARD = LVCMOS33;
+NET "usart_txd" LOC = F9 | IOSTANDARD = LVCMOS33;
 
 #LED
 NET "led_out" LOC = R7 | IOSTANDARD = LVCMOS33;
