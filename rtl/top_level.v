@@ -324,6 +324,14 @@ wire [31:0]                        ctrl_gpio_writedata;
 wire [3:0]                         ctrl_gpio_byteenable;
 wire                               ctrl_gpio_waitrequest;
 
+wire                               ctrl_sys_timer_read;
+wire [31:0]                        ctrl_sys_timer_readdata;
+wire [1:0]                         ctrl_sys_timer_response;
+wire                               ctrl_sys_timer_write;
+wire [31:0]                        ctrl_sys_timer_writedata;
+wire [3:0]                         ctrl_sys_timer_byteenable;
+wire                               ctrl_sys_timer_waitrequest;
+
 wire [32-1:0] irq_vec;
 wire          dsi_irq;
 wire          usart_irq;
@@ -418,8 +426,8 @@ BASE ADDR           MASK          SIZE         COMMENT
 0x0101_0300     0xFFFF_FF00       2^8           DSI
 0x0101_0400     0xFFFF_FF00       2^8           USART
 0x0101_0500     0xFFFF_FF00       2^8           I2C HDMI
-0x0101_0600     0xFFFF_FF00       2^8           I2C EEPROM
-0x0101_0700     0xFFFF_FF00       2^8           GPIO
+0x0101_0600     0xFFFF_FF00       2^8           GPIO
+0x0101_0700     0xFFFF_FF00       2^8           SYS_TIMER
 */
 
 parameter M0_ADDR_WIDTH = 18;//$clog2(!(32'hFFFC_0000));
@@ -442,6 +450,7 @@ wire [M1_ADDR_WIDTH-1:0]                         ctrl_hdmi_address;
 wire [M9_ADDR_WIDTH-1:0]                         ctrl_pg_address;
 wire [M6_ADDR_WIDTH-1:0]                         ctrl_i2c_address;
 wire [M7_ADDR_WIDTH-1:0]                         ctrl_gpio_address;
+wire [M8_ADDR_WIDTH-1:0]                         ctrl_sys_timer_address;
 
 interconnect_mod #(
     .M0_BASE(32'h0000_0000),    //* DDR
@@ -468,8 +477,8 @@ interconnect_mod #(
     .M7_BASE(32'h0101_0600),    //!  GPIO
     .M7_MASK(32'hFFFF_FF00),    //!  GPIO
     .M7_ADDR_W(M7_ADDR_WIDTH),
-    .M8_BASE(32'h0101_0700),    //!
-    .M8_MASK(32'hFFFF_FF00),    //!
+    .M8_BASE(32'h0101_0700),    //!  SYS_TIMER
+    .M8_MASK(32'hFFFF_FF00),    //!  SYS_TIMER
     .M8_ADDR_W(M8_ADDR_WIDTH),
     .M9_BASE(32'h0101_0100),    //! PATTERN GENERATOR
     .M9_MASK(32'hFFFF_FF00),    //! PATTERN GENERATOR
@@ -566,14 +575,14 @@ interconnect_mod #(
     .m7_bus_waitrequest         (ctrl_gpio_waitrequest  ),
 
     //* Master port 8
-    .m8_bus_addr                (),
-    .m8_bus_read                (),
-    .m8_bus_readdata            (),
-    .m8_bus_response            (),
-    .m8_bus_write               (),
-    .m8_bus_writedata           (),
-    .m8_bus_byteenable          (),
-    .m8_bus_waitrequest         (1'b0),
+    .m8_bus_addr                (ctrl_sys_timer_address     ),
+    .m8_bus_read                (ctrl_sys_timer_read        ),
+    .m8_bus_readdata            (ctrl_sys_timer_readdata    ),
+    .m8_bus_response            (ctrl_sys_timer_response    ),
+    .m8_bus_write               (ctrl_sys_timer_write       ),
+    .m8_bus_writedata           (ctrl_sys_timer_writedata   ),
+    .m8_bus_byteenable          (ctrl_sys_timer_byteenable  ),
+    .m8_bus_waitrequest         (ctrl_sys_timer_waitrequest ),
 
     //* Master port 9
     .m9_bus_addr                (ctrl_pg_address        ),
@@ -1288,8 +1297,21 @@ progmem_wrapper progmem_wrapper_0(
     .ctrl_waitrequest        (ctrl_prog_mem_waitrequest   )
 );
 
+//* SYS TIMER
+ sys_timer sys_timer_0 (
+    .clk                         (sys_clk              ),
+    .rst_n                       (sys_rst_n            ),
 
-//* GPIO
+    /********* MM iface *********/
+    .ctrl_address                (ctrl_sys_timer_address       ),
+    .ctrl_read                   (ctrl_sys_timer_read          ),
+    .ctrl_readdata               (ctrl_sys_timer_readdata      ),
+    .ctrl_response               (ctrl_sys_timer_response      ),
+    .ctrl_write                  (ctrl_sys_timer_write         ),
+    .ctrl_writedata              (ctrl_sys_timer_writedata     ),
+    .ctrl_byteenable             (ctrl_sys_timer_byteenable    ),
+    .ctrl_waitrequest            (ctrl_sys_timer_waitrequest   )
+);
 
 //* PAttern GENERATOR
 pattern_generator  #(
