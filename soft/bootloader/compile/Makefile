@@ -12,7 +12,7 @@ SIZE =		$(CROSS_COMPILE)size
 INCLUDE_PATHS = -I. -I./../ -I./../../bsp/
 CFLAGS = -g -O0 -march=rv32ima -mabi=ilp32  -fdata-sections -ffunction-sections $(INCLUDE_PATHS)  -Wall
 LDFLAGS = -Wl,--gc-sections
-OBJS = ./../main.o start.o ./../../bsp/lib_usart.o
+OBJS = ./../main.o start.o ./../../bsp/lib_usart.o ./../../bsp/lib_sys_timer.o
 LDS = boot.ld
 OUTPUT= firmware
 
