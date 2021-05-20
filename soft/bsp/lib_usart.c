@@ -32,7 +32,7 @@ void USART_clear_rx_ready(void)
     UART->usart_reg_isr |= (1<<1);
 }
 
-uint8_t USART_read_byte_blocking(void)
+int USART_read_byte_blocking(uint8_t * data)
 {
     uint8_t data;
     uint32_t timeout = 50000;
@@ -43,9 +43,9 @@ uint8_t USART_read_byte_blocking(void)
             return -1;
         }
     }
-    data = UART->usart_reg_rxd;
+    (*data) = UART->usart_reg_rxd;
     USART_clear_rx_ready();
-    return data;
+    return 0;
 }
 
 int USART_send_byte_blocking(uint8_t byte)
