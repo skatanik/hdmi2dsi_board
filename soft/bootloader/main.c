@@ -11,6 +11,11 @@
 #include <stdint.h>
 #include "bsp.h"
 #include "lib_usart.h"
+#include "lib_sys_timer.h"
+#include "crc_16.h"
+
+#define WAIT_TIMEOUT 11600000       // 0.5 sec
+
 // WRITE_REG(0x01010600, 1);
 /*
  */
@@ -26,19 +31,33 @@ typedef enum
     STATE_WAIT_CRC          // wait for 16 bit CRC data
 } td_state_enum;
 
+typedef void (*voidfunc_t)();
+
 int main(void)
 {
+    uint32_t first_timestamp;
+    uint32_t second_timestamp;
+    uint32_t timeout_counter = WAIT_TIMEOUT;
+
     td_state_enum current_state = STATE_WAIT_FB;
     uint8_t input_byte;
     uint8_t number_of_packets;
     int packets_counter;
     uint16_t packet_size = 0;
     uint16_t received_crc = 0;
+    uint16_t packet_crc = 0xffff;
     int bytes_counter = 0;
     uint8_t first_packet_flag = 0;
     uint8_t last_packet_flag = 0;
-    uint32_t global_data_counter;
-    USART_init(100);
+    uint32_t * data_start_pointer = (uint32_t *)USER_START;
+    uint32_t word_to_write;
+
+    voidfunc_t f = (voidfunc_t)USER_START;
+    voidfunc_t f_sec = (voidfunc_t)USER_START_SEC;
+
+    USART_init(100);  // 115200
+
+    first_timestamp = SYS_TIMER_read_state();
 
     while (1)
     {
@@ -50,7 +69,7 @@ int main(void)
                 case STATE_WAIT_FB:
                     if(input_byte == 0x46) // hello byte
                     {
-                        USART_send_byte_blocking(input_byte = 0x20); // hello back
+                        USART_send_byte_blocking(input_byte + 0x20); // hello back
                         current_state = STATE_WAIT_COMM_BYTE;
                     }
                     break;
@@ -70,7 +89,7 @@ int main(void)
                         current_state = STATE_WAIT_FB;
                         USART_send_byte_blocking(input_byte = 0x70); // smth is wrong
                     }
-                    // add_to_CRC()
+                    packet_crc = crc16_byte(packet_crc, input_byte);
                     break;
 //************************************************************************************
                 case STATE_WAIT_PACKET_NUM:
@@ -88,7 +107,7 @@ int main(void)
                     }
 
                     current_state = STATE_WAIT_DS_BYTES;
-                    // add_to_CRC()
+                    packet_crc = crc16_byte(packet_crc, input_byte);
                     break;
 //************************************************************************************
                 case STATE_WAIT_DS_BYTES:
@@ -101,13 +120,28 @@ int main(void)
                     {
                         packet_size += input_byte;
                         current_state = STATE_WAIT_DATA_BYTE;
+                        bytes_counter = 0;
+                        word_to_write = 0;
                     }
-                    // add_to_CRC()
+                    packet_crc = crc16_byte(packet_crc, input_byte);
                     break;
 //************************************************************************************
                 case STATE_WAIT_DATA_BYTE:
                     // assemble word, then write it somewhere
-                    // add_to_CRC()
+                    word_to_write += (input_byte << (bytes_counter*8));
+                    bytes_counter++;
+
+                    if(bytes_counter % 4 == 0)
+                    {
+                        (*data_start_pointer) = word_to_write;
+                        data_start_pointer +=4;
+                        word_to_write = 0;
+                    }
+
+                    if(bytes_counter == packet_size)
+                        current_state = STATE_WAIT_CRC;
+
+                    packet_crc = crc16_byte(packet_crc, input_byte);
                     break;
 //************************************************************************************
                 case STATE_WAIT_CRC:
@@ -119,9 +153,21 @@ int main(void)
                     } else
                     {
                         received_crc += input_byte;
-                        // calc_CRC();
 
-
+                        if(packet_crc == received_crc)
+                        {
+                            if(last_packet_flag)
+                            {
+                                USART_send_byte_blocking(0x88); // send success
+                                // run new code
+                                f();
+                            }
+                        }
+                        else// fail
+                        {
+                            current_state = STATE_WAIT_FB;
+                            USART_send_byte_blocking(0x71); // smth is wrong
+                        }
                     }
                     break;
 //************************************************************************************
@@ -131,7 +177,26 @@ int main(void)
             }
 
         }
+        else if(current_state != STATE_WAIT_FB)
+        {
+            USART_send_byte_blocking(input_byte = 0x72); // exit because of uart timeout during receiving
+            f_sec();
+        }
 
+        second_timestamp = first_timestamp;
+        first_timestamp = SYS_TIMER_read_state();
+
+        if(SYS_TIMER_read_count_flag())
+        {
+            timeout_counter -= second_timestamp - (0xffffff - first_timestamp);
+        } else {
+            timeout_counter -= second_timestamp - first_timestamp;
+        }
+
+        if(timeout_counter < 0) // timeout
+        {
+            f_sec();
+        }
     }
 
   return 0;
