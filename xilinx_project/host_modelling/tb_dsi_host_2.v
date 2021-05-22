@@ -159,7 +159,7 @@ dsi_host_top dsi_host_top_0(
     /* BUTTON */
     );
 
-assign rxd = txd;
+// assign rxd = txd;
 
 integer debug_symbol;
 
@@ -201,6 +201,119 @@ reg req_QOS     [31:0];
 reg req_ARUSER  [31:0];
 reg req_IDTAG   [31:0];
 integer res;
+
+
+integer               data_file    ; // file handler
+integer               scan_file    ; // file handler
+reg    [7:0] file_data;
+`define NULL 0
+
+// initial begin
+//   data_file = $fopen("dest_bin.txt", "r");
+//   if (data_file == `NULL) begin
+//     $display("data_file handle was NULL");
+//     $finish;
+//   end
+// end
+
+// always @(posedge clk) begin
+//   scan_file = $fscanf(data_file, "%h\n", file_data);
+//   if (!$feof(data_file)) begin
+//     //use captured_data as you would any other wire or reg value;
+//   end
+// end
+
+reg [7:0] data_tx;
+reg data_tx_wr;
+wire data_tx_ack;
+
+reg [7:0] data_to_send [4095:0];
+reg [7:0] data_to_send_current;
+
+integer data_counter;
+wire data_tx_ack_del;
+
+// assign data_tx_ack_del = data_tx_ack;
+
+initial
+begin
+
+    $readmemh("dest_bin.txt", data_to_send);
+
+    // $display("\nData to send %h", data_to_send[0]);
+
+    data_counter = 0;
+    data_tx_wr = 0;
+    data_tx = 0;
+    $display("\nStart usart bootloader");
+
+    wait(dsi_host_top_0.sys_rst_n === 1'b1)
+    wait(dsi_host_top_0.sys_rst_n === 1'b1)
+    repeat(2500) @(posedge dsi_host_top_0.sys_clk);
+
+    while(data_counter < 714)
+    begin
+        repeat(1) @(posedge dsi_host_top_0.sys_clk);
+        #0.1
+        if(data_tx_ack) begin
+            data_to_send_current = data_to_send[data_counter];
+            // $display("\nSending data %h", data_to_send_current);
+            data_tx_wr = 1'b1;
+            data_tx = data_to_send_current;
+            data_counter = data_counter + 1;
+        end
+        else begin
+            data_tx_wr = 1'b0;
+        end
+    end
+    repeat(1) @(posedge dsi_host_top_0.sys_clk);
+    data_tx_wr = 1'b0;
+
+$display("\End");
+
+end
+
+uart #(
+    .DATA_WIDTH(8)
+)uart_test
+(
+    .clk            ( dsi_host_top_0.sys_clk      ),
+    .rst            ( !dsi_host_top_0.sys_rst_n   ),
+
+    /*
+     * AXI input
+     */
+    .s_axis_tdata   (data_tx                ),
+    .s_axis_tvalid  (data_tx_wr             ),
+    .s_axis_tready  (data_tx_ack            ),
+
+    /*
+     * AXI output
+     */
+    .m_axis_tdata   (data_rx                ),
+    .m_axis_tvalid  (data_rx_ready          ),
+    .m_axis_tready  (1'b1            ),
+
+    /*
+     * UART interface
+     */
+    .rxd            ( txd                   ),
+    .txd            ( rxd                   ),
+
+    /*
+     * Status
+     */
+    .tx_busy            (  ),
+    .rx_busy            (  ),
+    .rx_overrun_error   (  ),
+    .rx_frame_error     (  ),
+
+    /*
+     * Configuration
+     */
+    .prescale           (100           )
+
+);
 
 // axi4_slave_vip_slv_t slave_agent;
 // axi4_slave_vip_slv_t slave_agent_pix_rd;
