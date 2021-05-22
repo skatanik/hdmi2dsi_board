@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include "bsp.h"
 
-void USART_init(int presc);
+void USART_init(uint32_t presc);
 int USART_check_tx_busy(void);
 int USART_check_rx_busy(void);
 int USART_check_tx_ready(void);

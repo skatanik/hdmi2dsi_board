@@ -25,7 +25,6 @@ typedef enum
 {
     STATE_WAIT_FB,          // wait for hello byte, answer
     STATE_WAIT_COMM_BYTE,   // wait for command byte
-    STATE_WAIT_PACKET_NUM,  // wait for packet number byte
     STATE_WAIT_DS_BYTES,    // wait for 16 bit data size   // wait for 16 bit data size
     STATE_WAIT_DATA_BYTE,   // wait for data bytes
     STATE_WAIT_CRC          // wait for 16 bit CRC data
@@ -45,12 +44,14 @@ int main(void)
     int packets_counter;
     uint16_t packet_size = 0;
     uint16_t received_crc = 0;
-    uint16_t packet_crc = 0xffff;
+    uint16_t packet_crc;
     int bytes_counter = 0;
     uint8_t first_packet_flag = 0;
     uint8_t last_packet_flag = 0;
-    uint32_t * data_start_pointer = (uint32_t *)USER_START;
+    uint32_t data_start_pointer = USER_START;
     uint32_t word_to_write;
+
+    uint8_t debug_led = 1;
 
     voidfunc_t f = (voidfunc_t)USER_START;
     voidfunc_t f_sec = (voidfunc_t)USER_START_SEC;
@@ -71,43 +72,21 @@ int main(void)
                     {
                         USART_send_byte_blocking(input_byte + 0x20); // hello back
                         current_state = STATE_WAIT_COMM_BYTE;
+                        packet_crc = 0xffff;
                     }
                     break;
 //************************************************************************************
                 case STATE_WAIT_COMM_BYTE:
                     if(input_byte == 0x21) // write first packet
                     {
-                        current_state = STATE_WAIT_PACKET_NUM;
-                        packets_counter = 0;
-                        first_packet_flag = 1;
-                    } else if(input_byte == 0x22) // write not the first packet
-                    {
-                        packets_counter ++;
-                        current_state = STATE_WAIT_PACKET_NUM;
+                        current_state = STATE_WAIT_DS_BYTES;
+                        packet_crc = crc16_byte(packet_crc, input_byte);
+                        WRITE_REG(0x10000000, (packet_crc));
                     } else
                     {
                         current_state = STATE_WAIT_FB;
-                        USART_send_byte_blocking(input_byte = 0x70); // smth is wrong
+                        USART_send_byte_blocking(0x70); // smth is wrong
                     }
-                    packet_crc = crc16_byte(packet_crc, input_byte);
-                    break;
-//************************************************************************************
-                case STATE_WAIT_PACKET_NUM:
-                    if(first_packet_flag)
-                    {
-                        number_of_packets = input_byte;
-                        packets_counter++;
-                        first_packet_flag = 0;
-                    }
-                    else
-                    {
-                        packets_counter++;
-                        if(packets_counter == number_of_packets)
-                            last_packet_flag = 1;
-                    }
-
-                    current_state = STATE_WAIT_DS_BYTES;
-                    packet_crc = crc16_byte(packet_crc, input_byte);
                     break;
 //************************************************************************************
                 case STATE_WAIT_DS_BYTES:
@@ -128,20 +107,25 @@ int main(void)
 //************************************************************************************
                 case STATE_WAIT_DATA_BYTE:
                     // assemble word, then write it somewhere
-                    word_to_write += (input_byte << (bytes_counter*8));
+                    word_to_write += (input_byte << ((bytes_counter % 4)*8));
                     bytes_counter++;
 
                     if(bytes_counter % 4 == 0)
                     {
-                        (*data_start_pointer) = word_to_write;
+                        WRITE_REG(data_start_pointer, word_to_write);
                         data_start_pointer +=4;
                         word_to_write = 0;
                     }
 
                     if(bytes_counter == packet_size)
+                    {
                         current_state = STATE_WAIT_CRC;
+                        bytes_counter = 0;
+                    }
 
                     packet_crc = crc16_byte(packet_crc, input_byte);
+
+
                     break;
 //************************************************************************************
                 case STATE_WAIT_CRC:
@@ -150,22 +134,22 @@ int main(void)
                         received_crc = 0;
                         received_crc = ((uint16_t)input_byte << 8);
                         bytes_counter++;
+
                     } else
                     {
                         received_crc += input_byte;
 
+                        WRITE_REG(0x10000000, (packet_crc));
+
                         if(packet_crc == received_crc)
                         {
-                            if(last_packet_flag)
-                            {
-                                USART_send_byte_blocking(0x88); // send success
-                                // run new code
-                                f();
-                            }
+                            USART_send_byte_blocking(0x88); // send success
+                            // run new code
+                            f();
                         }
                         else// fail
                         {
-                            current_state = STATE_WAIT_FB;
+                            current_state = STATE_WAIT_COMM_BYTE;
                             USART_send_byte_blocking(0x71); // smth is wrong
                         }
                     }

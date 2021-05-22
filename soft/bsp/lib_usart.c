@@ -1,6 +1,6 @@
 #include "lib_usart.h"
 
-void USART_init(int presc)
+void USART_init(uint32_t presc)
 {
     // presc = f_clk/(8*baudrate)
     UART->usart_reg_prsc = presc;
