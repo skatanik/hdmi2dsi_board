@@ -434,7 +434,7 @@ parameter M0_ADDR_WIDTH = 18;//$clog2(!(32'hFFFC_0000));
 parameter M1_ADDR_WIDTH = 8;//$clog2(!(32'hFFFF_FF00));
 parameter M2_ADDR_WIDTH = 8;//$clog2(!(32'hFFFF_FF00));
 parameter M3_ADDR_WIDTH = 8;//$clog2(!(32'hFFFF_FF00));
-parameter M4_ADDR_WIDTH = 13;//$clog2(!(32'hFFFF_E000));
+parameter M4_ADDR_WIDTH = 14;//$clog2(!(32'hFFFF_E000));
 parameter M5_ADDR_WIDTH = 8;//$clog2(!(32'hFFFF_FF00));
 parameter M6_ADDR_WIDTH = 8;//$clog2(!(32'hFFFF_FF00));
 parameter M7_ADDR_WIDTH = 8;//$clog2(!(32'hFFFF_FF00));
@@ -456,7 +456,7 @@ interconnect_mod #(
     .M0_BASE(32'h0000_0000),    //* DDR
     .M0_MASK(32'hFFFC_0000),    //* DDR
     .M0_ADDR_W(M0_ADDR_WIDTH),
-    .M1_BASE(32'h0100_1000),    // HDMI
+    .M1_BASE(32'h0101_0000),    // HDMI
     .M1_MASK(32'hFFFF_FF00),    // HDMI
     .M1_ADDR_W(M1_ADDR_WIDTH),
     .M2_BASE(32'h0101_0200),    //* PIX READER
@@ -466,7 +466,7 @@ interconnect_mod #(
     .M3_MASK(32'hFFFF_FF00),    //* DSI
     .M3_ADDR_W(M3_ADDR_WIDTH),
     .M4_BASE(32'h0100_0000),    //* PROG MEM
-    .M4_MASK(32'hFFFF_E000),    //* PROG MEM
+    .M4_MASK(32'hFFFF_C000),    //* PROG MEM
     .M4_ADDR_W(M4_ADDR_WIDTH),
     .M5_BASE(32'h0101_0400),    //* UART
     .M5_MASK(32'hFFFF_FF00),    //* UART
