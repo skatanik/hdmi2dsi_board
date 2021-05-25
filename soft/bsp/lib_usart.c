@@ -34,8 +34,8 @@ void USART_clear_rx_ready(void)
 
 int USART_read_byte_blocking(uint8_t * data)
 {
-    uint32_t timeout = 50000;
-    while(!USART_check_rx_ready()) {
+    volatile uint32_t timeout = 50000;
+    while(USART_check_rx_ready() == 0) {
         timeout--;
         if(timeout == 0)
         {
@@ -49,6 +49,7 @@ int USART_read_byte_blocking(uint8_t * data)
 
 int USART_send_byte_blocking(uint8_t byte)
 {
+    while(USART_check_tx_busy()) {}
     UART->usart_reg_txd = byte;
     while(USART_check_tx_busy()) {}
     return 0;
