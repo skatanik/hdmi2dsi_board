@@ -47,10 +47,8 @@ int USART_read_byte_blocking(uint8_t * data)
     return 0;
 }
 
-int USART_send_byte_blocking(uint8_t byte)
+void USART_send_byte_blocking(uint8_t byte)
 {
-    while(USART_check_tx_busy()) {}
     UART->usart_reg_txd = byte;
     while(USART_check_tx_busy()) {}
-    return 0;
 }

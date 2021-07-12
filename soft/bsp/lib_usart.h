@@ -11,6 +11,6 @@ int USART_check_tx_ready(void);
 int USART_check_rx_ready(void);
 void USART_clear_rx_ready(void);
 int USART_read_byte_blocking(uint8_t * data);
-int USART_send_byte_blocking(uint8_t byte);
+void USART_send_byte_blocking(uint8_t byte);
 
 #endif

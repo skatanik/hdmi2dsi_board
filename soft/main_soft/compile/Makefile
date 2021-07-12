@@ -12,7 +12,7 @@ SIZE =		$(CROSS_COMPILE)size
 INCLUDE_PATHS = -I. -I./../ -I./../../bsp/
 CFLAGS = -g -O0 -march=rv32ima -mabi=ilp32  -fdata-sections -ffunction-sections $(INCLUDE_PATHS)  -Wall
 LDFLAGS = -Wl,--gc-sections
-OBJS = ./../main.o start.o ./../../bsp/lib_usart.o ./../../bsp/lib_sys_timer.o ./../../bsp/crc_16.o
+OBJS = ./../main.o start.o  ./../../bsp/lib_sys_timer.o ./../../bsp/crc_16.o # ./../../bsp/lib_usart.o
 LDS = boot.ld
 OUTPUT= firmware
 
@@ -24,7 +24,7 @@ $(OUTPUT): $(LDS) $(OBJS)
 	echo "Step 2"
 	${CC} -g -O0 -Wl,--gc-sections -march=rv32ima -mabi=ilp32 -o $(OUTPUT).elf $(LDFLAGS) -nostartfiles $(OBJS) -lm -T $(LDS)
 	${OBJCOPY} -O binary $(OUTPUT).elf $(OUTPUT).bin
-#   ${OBJDUMP} -D $(OUTPUT).elf > disasm.S
+	${OBJDUMP} -D $(OUTPUT).elf > disasm.S
 	$(SIZE) $(OUTPUT).elf
 #	../tools/genraminit $(OUTPUT).bin 1300 0 0 > $(OUTPUT).ram
 #	../tools/genmeminit $(OUTPUT).bin 1300 0 0 > $(OUTPUT).mem
@@ -36,7 +36,7 @@ $(OUTPUT): $(LDS) $(OBJS)
 prgr_rom.mif: $(OUTPUT).bin
 	python3 makehex.py $^ 1024 > $(OUTPUT).coe
 	python3 makemif.py $^ 1024 > $@
-# cp -r prgr_rom.mif ./../../../xilinx_project/dsi_host/ipcore_dir/prgr_rom.mif
+	cp -r prgr_rom.mif ./../../../xilinx_project/dsi_host/ipcore_dir/prgr_rom.mif
 # cp -r prgr_rom.mif ./../../xilinx_project/vivado_test/vivado_test.ip_user_files/mem_init_files/prgr_rom_s7.mif
 # cp -r prgr_rom.mif ./../../xilinx_project/vivado_test/vivado_test.sim/sim_1/behav/modelsim/prgr_rom_s7.mif
 

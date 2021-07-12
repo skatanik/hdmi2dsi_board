@@ -40,14 +40,10 @@ int main(void)
 
     td_state_enum current_state = STATE_WAIT_FB;
     uint8_t input_byte;
-    uint8_t number_of_packets;
-    int packets_counter;
     uint16_t packet_size = 0;
     uint16_t received_crc = 0;
     uint16_t packet_crc;
     int bytes_counter = 0;
-    uint8_t first_packet_flag = 0;
-    uint8_t last_packet_flag = 0;
     uint32_t data_start_pointer = USER_START;
     uint32_t word_to_write;
 
@@ -81,7 +77,7 @@ int main(void)
                     {
                         current_state = STATE_WAIT_DS_BYTES;
                         packet_crc = crc16_byte(packet_crc, input_byte);
-                        WRITE_REG(0x10000000, (packet_crc));
+                        // WRITE_REG(0x10000000, (packet_crc));
                     } else
                     {
                         current_state = STATE_WAIT_FB;
@@ -125,6 +121,9 @@ int main(void)
 
                     packet_crc = crc16_byte(packet_crc, input_byte);
 
+                    WRITE_REG(0x01010600, debug_led);
+                    debug_led = ~debug_led;
+
 
                     break;
 //************************************************************************************
@@ -139,7 +138,7 @@ int main(void)
                     {
                         received_crc += input_byte;
 
-                        WRITE_REG(0x10000000, (packet_crc));
+                        // WRITE_REG(0x10000000, (packet_crc));
 
                         if(packet_crc == received_crc)
                         {
@@ -161,26 +160,34 @@ int main(void)
             }
 
         }
-        else if(current_state != STATE_WAIT_FB)
-        {
-            USART_send_byte_blocking(input_byte = 0x72); // exit because of uart timeout during receiving
-            f_sec();
-        }
+        // else if(current_state != STATE_WAIT_FB)
+        // {
+        //     USART_send_byte_blocking(input_byte = 0x72); // exit because of uart timeout during receiving
+        //     f_sec();
+        // }
 
-        second_timestamp = first_timestamp;
-        first_timestamp = SYS_TIMER_read_state();
+        // second_timestamp = first_timestamp;
+        // first_timestamp = SYS_TIMER_read_state();
 
-        if(SYS_TIMER_read_count_flag())
-        {
-            timeout_counter -= second_timestamp - (0xffffff - first_timestamp);
-        } else {
-            timeout_counter -= second_timestamp - first_timestamp;
-        }
+        // if(SYS_TIMER_read_count_flag())
+        // {
+        //     timeout_counter -= second_timestamp - (0xffffff - first_timestamp);
+        // } else {
+        //     timeout_counter -= second_timestamp - first_timestamp;
+        // }
 
-        if(timeout_counter < 0) // timeout
-        {
-            f_sec();
-        }
+        // if(timeout_counter < 0) // timeout
+        // {
+        //     while (1)
+        //     {
+        //         WRITE_REG(0x01010600, debug_led);
+        //         debug_led = ~debug_led;
+        //         for(volatile int kk = 0; kk < 50000; kk++)
+        //         {}
+        //     }
+
+        //     // f_sec();
+        // }
     }
 
   return 0;

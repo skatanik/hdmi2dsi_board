@@ -9,7 +9,8 @@ SECTIONS
   /*--------------------------------------------------------------------*/
 
   /* Begining of code and text segment */
-  . = 0x01000C00;
+  /* . = 0x01000C00; */
+  . = 0x01000000;
 
  /* .boot : { *(.boot) } */
 
@@ -135,4 +136,5 @@ SECTIONS
 
   PROVIDE( _fstack = 0x01003C00 );
   PROVIDE( _fexception_stack = 0x01003C00 + 0x200 );
+
 }
