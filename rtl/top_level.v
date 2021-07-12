@@ -3,6 +3,21 @@
 `default_nettype none
 
 `include "prj_defines.vh"
+
+`ifndef DDR_EN
+
+    `ifdef HDMI_EN
+        $display('HDMI EN WITHOUT DDR');
+        $error();
+    `endif
+
+    `ifdef PIX_READER_EN
+        $display('PIX READER WITHOUT DDR');
+        $error();
+    `endif
+
+`endif
+
 //////////////////////////////////////////////////////////////////////////////////
 // Company:
 // Engineer:
@@ -493,7 +508,7 @@ interconnect_mod #(
     .s0_bus_writedata           (s0_bus_writedata       ),
     .s0_bus_byteenable          (s0_bus_byteenable      ),
     .s0_bus_waitrequest         (s0_bus_waitrequest     ),
-
+    `ifdef DDR_EN
     //* Master port 0
     .m0_bus_addr                (ram_mem_address        ),
     .m0_bus_read                (ram_mem_read           ),
@@ -503,7 +518,8 @@ interconnect_mod #(
     .m0_bus_writedata           (ram_mem_writedata      ),
     .m0_bus_byteenable          (ram_mem_byteenable     ),
     .m0_bus_waitrequest         (ram_mem_waitrequest    ),
-
+    `endif
+    `ifdef HDMI_EN
     //* Master port 1
     .m1_bus_addr                (ctrl_hdmi_address              ),
     .m1_bus_read                (ctrl_hdmi_read                 ),
@@ -513,7 +529,8 @@ interconnect_mod #(
     .m1_bus_writedata           (ctrl_hdmi_writedata            ),
     .m1_bus_byteenable          (ctrl_hdmi_byteenable           ),
     .m1_bus_waitrequest         (ctrl_hdmi_waitrequest          ),
-
+    `endif
+    `ifdef PIX_READER_EN
     //* Master port 2
     .m2_bus_addr                (ctrl_pix_reader_address       ),
     .m2_bus_read                (ctrl_pix_reader_read          ),
@@ -523,7 +540,8 @@ interconnect_mod #(
     .m2_bus_writedata           (ctrl_pix_reader_writedata     ),
     .m2_bus_byteenable          (ctrl_pix_reader_byteenable    ),
     .m2_bus_waitrequest         (ctrl_pix_reader_waitrequest   ),
-
+    `endif
+    `ifdef DSI_EN
     //* Master port 3
     .m3_bus_addr                (ctrl_dsi_address        ),
     .m3_bus_read                (ctrl_dsi_read           ),
@@ -533,7 +551,7 @@ interconnect_mod #(
     .m3_bus_writedata           (ctrl_dsi_writedata      ),
     .m3_bus_byteenable          (ctrl_dsi_byteenable     ),
     .m3_bus_waitrequest         (ctrl_dsi_waitrequest    ),
-
+    `endif
     //* Master port 4
     .m4_bus_addr                (ctrl_prog_mem_address          ),
     .m4_bus_read                (ctrl_prog_mem_read             ),
@@ -544,6 +562,7 @@ interconnect_mod #(
     .m4_bus_byteenable          (ctrl_prog_mem_byteenable       ),
     .m4_bus_waitrequest         (ctrl_prog_mem_waitrequest      ),
 
+    `ifdef USART_EN
     //* Master port 5
     .m5_bus_addr                (ctrl_uart_address          ),
     .m5_bus_read                (ctrl_uart_read             ),
@@ -553,7 +572,8 @@ interconnect_mod #(
     .m5_bus_writedata           (ctrl_uart_writedata        ),
     .m5_bus_byteenable          (ctrl_uart_byteenable       ),
     .m5_bus_waitrequest         (ctrl_uart_waitrequest      ),
-
+    `endif
+    `ifdef I2C_EN
     //* Master port 6
     .m6_bus_addr                (ctrl_i2c_address           ),
     .m6_bus_read                (ctrl_i2c_read              ),
@@ -563,7 +583,7 @@ interconnect_mod #(
     .m6_bus_writedata           (ctrl_i2c_writedata         ),
     .m6_bus_byteenable          (ctrl_i2c_byteenable        ),
     .m6_bus_waitrequest         (ctrl_i2c_waitrequest       ),
-
+    `endif
     //* Master port 7
     .m7_bus_addr                (ctrl_gpio_address      ),
     .m7_bus_read                (ctrl_gpio_read         ),
@@ -573,7 +593,7 @@ interconnect_mod #(
     .m7_bus_writedata           (ctrl_gpio_writedata    ),
     .m7_bus_byteenable          (ctrl_gpio_byteenable   ),
     .m7_bus_waitrequest         (ctrl_gpio_waitrequest  ),
-
+    `ifdef SYS_TIMER_EN
     //* Master port 8
     .m8_bus_addr                (ctrl_sys_timer_address     ),
     .m8_bus_read                (ctrl_sys_timer_read        ),
@@ -583,7 +603,8 @@ interconnect_mod #(
     .m8_bus_writedata           (ctrl_sys_timer_writedata   ),
     .m8_bus_byteenable          (ctrl_sys_timer_byteenable  ),
     .m8_bus_waitrequest         (ctrl_sys_timer_waitrequest ),
-
+    `endif
+    `ifdef PG_EN
     //* Master port 9
     .m9_bus_addr                (ctrl_pg_address        ),
     .m9_bus_read                (ctrl_pg_read           ),
@@ -593,6 +614,7 @@ interconnect_mod #(
     .m9_bus_writedata           (ctrl_pg_writedata      ),
     .m9_bus_byteenable          (ctrl_pg_byteenable     ),
     .m9_bus_waitrequest         (ctrl_pg_waitrequest    )
+    `endif
 );
 
 //* GPIO
@@ -634,6 +656,7 @@ end
 // assign led_out = c3_calib_done;
 
 //* Prosessor to AXI bridge
+`ifdef DDR_EN
 core_axi_bridge core_axi_bridge_0(
 
     .clk                     (sys_clk               ),
@@ -691,6 +714,15 @@ core_axi_bridge core_axi_bridge_0(
     .mst_axi_rvalid          (mst_core_axi_rvalid    ),
     .mst_axi_rready          (mst_core_axi_rready    )
 );
+
+`else
+assign ram_mem_readdata         = 32'b0;
+assign ram_mem_response         = 'b0;
+assign ram_mem_waitrequest      = 'b0;
+
+`endif
+
+`ifdef DDR_EN
 
 `ifdef SIMULATION
 
@@ -893,6 +925,7 @@ axi4_slave_vip  slave_ro(
 // );
 
 //* DDR3 controller
+
 mig_ddr3 # (
     .C3_P0_MASK_SIZE(4),
     .C3_P0_DATA_PORT_SIZE(32),
@@ -1084,8 +1117,10 @@ u_mig_ddr3 (
 
 `endif
 
-//* HDMI ADV Recv
+`endif // endif DDR_EN
 
+//* HDMI ADV Recv
+`ifdef HDMI_EN
 hdmi_recv hdmi_recv_0(
     .hdmi_rst_n              (hdmi_rst                  ),
     .hdmi_clk                (hdmi_clk_buf              ),
@@ -1133,7 +1168,32 @@ hdmi_recv hdmi_recv_0(
     .ctrl_byteenable         (ctrl_hdmi_byteenable      ),
     .ctrl_waitrequest        (ctrl_hdmi_waitrequest     )
 );
+`else
+assign ctrl_hdmi_readdata = 'b0;
+assign ctrl_hdmi_response = 'b0;
+assign ctrl_hdmi_waitrequest = 'b0;
 
+
+assign hdmi_axi_awid = 'b0;
+assign hdmi_axi_awaddr = 'b0;
+assign hdmi_axi_awlen = 'b0;
+assign hdmi_axi_awsize = 'b0;
+assign hdmi_axi_awburst = 'b0;
+assign hdmi_axi_awlock = 'b0;
+assign hdmi_axi_awcache = 'b0;
+assign hdmi_axi_awprot = 'b0;
+assign hdmi_axi_awvalid = 'b0;
+
+assign hdmi_axi_wdata  = 'b0;
+assign hdmi_axi_wstrb  = 'b0;
+assign hdmi_axi_wlast  = 'b0;
+assign hdmi_axi_wvalid = 'b0;
+
+assign hdmi_axi_bready = 'b1;
+
+`endif
+
+`ifdef PIX_READER_EN
 //* Pixel reader
 axi_to_stream_dma #(
     .ADDR_WIDTH(24),
@@ -1180,6 +1240,29 @@ axi_to_stream_dma #(
     .ctrl_byteenable                (ctrl_pix_reader_byteenable     ),
     .ctrl_waitrequest               (ctrl_pix_reader_waitrequest    )
 );
+`else
+assign ctrl_pix_reader_readdata = 'b0;
+assign ctrl_pix_reader_response = 'b0;
+assign ctrl_pix_reader_waitrequest = 'b0;
+
+assign pix_axi_arid = 'b0;
+assign pix_axi_araddr = 'b0;
+assign pix_axi_arlen = 'b0;
+assign pix_axi_arsize = 'b0;
+assign pix_axi_arburst = 'b0;
+assign pix_axi_arlock = 'b0;
+assign pix_axi_arcache = 'b0;
+assign pix_axi_arprot = 'b0;
+assign pix_axi_arvalid = 'b0;
+
+assign pix_axi_rresp = 'b0;
+assign pix_axi_rready = 'b1;
+
+assign st_ready = 'b1;
+
+`endif
+
+`ifdef DSI_EN
 //* DSI +
 dsi_tx_top #(
     .LINE_WIDTH            (640),
@@ -1234,7 +1317,17 @@ dsi_tx_top #(
     .avl_mm_waitrequest                     (ctrl_dsi_waitrequest   )
 
 );
+`else
 
+assign st_gen_ready = 'b0;
+
+assign ctrl_dsi_readdata = 'b0;
+assign ctrl_dsi_response = 'b0;
+assign ctrl_dsi_waitrequest = 'b0;
+
+`endif
+
+`ifdef I2C_EN
 //* I2C master ADV
 i2c_master_wrapper i2c_master_wrapper_0(
     .clk                 (sys_clk              ),
@@ -1253,10 +1346,15 @@ i2c_master_wrapper i2c_master_wrapper_0(
     .ctrl_waitrequest    (ctrl_i2c_waitrequest  )
     // .irq
 );
+`else
 
-//* HDMI Parallel receiver
-//* Stream to AXI DMA
+assign ctrl_i2c_readdata = 'b0;
+assign ctrl_i2c_response = 'b0;
+assign ctrl_i2c_waitrequest = 'b0;
 
+`endif
+
+`ifdef USART_EN
 //* Usart RX/TX
 uart_wrapper uart_wrapper_0(
     //* system signals
@@ -1279,6 +1377,13 @@ uart_wrapper uart_wrapper_0(
 
     .irq                    (usart_irq              )
 );
+`else
+
+assign ctrl_uart_readdata = 'b0;
+assign ctrl_uart_response = 'b0;
+assign ctrl_uart_waitrequest = 'b0;
+
+`endif
 
 //* Programm Mem
 progmem_wrapper progmem_wrapper_0(
@@ -1297,6 +1402,7 @@ progmem_wrapper progmem_wrapper_0(
     .ctrl_waitrequest        (ctrl_prog_mem_waitrequest   )
 );
 
+`ifdef SYS_TIMER_EN
 //* SYS TIMER
  sys_timer sys_timer_0 (
     .clk                         (sys_clk              ),
@@ -1312,7 +1418,15 @@ progmem_wrapper progmem_wrapper_0(
     .ctrl_byteenable             (ctrl_sys_timer_byteenable    ),
     .ctrl_waitrequest            (ctrl_sys_timer_waitrequest   )
 );
+`else
 
+assign ctrl_sys_timer_readdata = 'b0;
+assign ctrl_sys_timer_response = 'b0;
+assign ctrl_sys_timer_waitrequest = 'b0;
+
+`endif
+
+`ifdef PG_EN
 //* PAttern GENERATOR
 pattern_generator  #(
     .IMG_HEIGH(24),
@@ -1342,6 +1456,20 @@ pattern_generator  #(
     .ctrl_byteenable            (ctrl_pg_byteenable    ),
     .ctrl_waitrequest           (ctrl_pg_waitrequest   )
 );
+`else
+
+assign ctrl_pg_readdata = 'b0;
+assign ctrl_pg_response = 'b0;
+assign ctrl_pg_waitrequest = 'b0;
+
+assign st_ready = 'b0;
+
+assign st_gen_data          = 'b0;
+assign st_gen_valid         = 'b0;
+assign st_gen_endofpacket   = 'b0;
+assign st_gen_startofpacket = 'b0;
+
+`endif
 
 //* Clocking
 //* Main PLL (sys clock + dphy)
@@ -1387,7 +1515,7 @@ PLL_BASE #(
     .CLKOUT0_DIVIDE(2),
     .CLKOUT1_DIVIDE(2),
     .CLKOUT2_DIVIDE(16),
-    .CLKOUT3_DIVIDE(10),
+    .CLKOUT3_DIVIDE(30), // 10
     .CLKOUT4_DIVIDE(29),
     .CLKOUT5_DIVIDE(3),
     // CLKOUT0_DUTY_CYCLE - CLKOUT5_DUTY_CYCLE: Duty cycle for CLKOUT# clock output (0.01-0.99).
