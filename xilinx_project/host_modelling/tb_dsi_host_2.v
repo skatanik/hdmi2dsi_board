@@ -73,7 +73,7 @@ r_clk_25 = 0;
 #500
 forever
 begin
-    #20 r_clk_25 = ~r_clk_25;
+    #15.625 r_clk_25 = ~r_clk_25;
 end
 end
 
@@ -249,25 +249,25 @@ begin
 
     wait(dsi_host_top_0.sys_rst_n === 1'b1)
     wait(dsi_host_top_0.sys_rst_n === 1'b1)
-    repeat(2500) @(posedge dsi_host_top_0.sys_clk);
+    repeat(25000) @(posedge dsi_host_top_0.sys_clk);
 
-    while(data_counter < 714)
-    begin
-        repeat(1) @(posedge dsi_host_top_0.sys_clk);
-        #0.1
-        if(data_tx_ack) begin
-            data_to_send_current = data_to_send[data_counter];
-            // $display("\nSending data %h", data_to_send_current);
-            data_tx_wr = 1'b1;
-            data_tx = data_to_send_current;
-            data_counter = data_counter + 1;
-        end
-        else begin
-            data_tx_wr = 1'b0;
-        end
-    end
-    repeat(1) @(posedge dsi_host_top_0.sys_clk);
-    data_tx_wr = 1'b0;
+    // while(data_counter < 714)
+    // begin
+    //     repeat(1) @(posedge dsi_host_top_0.sys_clk);
+    //     #0.1
+    //     if(data_tx_ack) begin
+    //         data_to_send_current = data_to_send[data_counter];
+    //         // $display("\nSending data %h", data_to_send_current);
+    //         data_tx_wr = 1'b1;
+    //         data_tx = data_to_send_current;
+    //         data_counter = data_counter + 1;
+    //     end
+    //     else begin
+    //         data_tx_wr = 1'b0;
+    //     end
+    // end
+    // repeat(1) @(posedge dsi_host_top_0.sys_clk);
+    // data_tx_wr = 1'b0;
 
 $display("\End");
 
@@ -311,7 +311,7 @@ uart #(
     /*
      * Configuration
      */
-    .prescale           (100           )
+    .prescale           (33           )
 
 );
 
