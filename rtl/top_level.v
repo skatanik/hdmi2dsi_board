@@ -1241,6 +1241,7 @@ axi_to_stream_dma #(
     .ctrl_waitrequest               (ctrl_pix_reader_waitrequest    )
 );
 `else
+
 assign ctrl_pix_reader_readdata = 'b0;
 assign ctrl_pix_reader_response = 'b0;
 assign ctrl_pix_reader_waitrequest = 'b0;
