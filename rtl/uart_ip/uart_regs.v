@@ -10,7 +10,7 @@ module uart_regs (
     output  wire                                irq                             ,
 
     /********* Avalon-MM iface *********/
-    input   wire [4:0]                          avl_mm_addr                     ,
+    input   wire [7:0]                          avl_mm_addr                     ,
 
     input   wire                                avl_mm_read                     ,
     output  wire [31:0]                         avl_mm_readdata                 ,
@@ -40,14 +40,14 @@ module uart_regs (
 );
 
 localparam REGISTERS_NUMBER     = 6;
-localparam ADDR_WIDTH           = 5;
+localparam ADDR_WIDTH           = 8;
 localparam MEMORY_MAP           = {
-                                    5'h14,
-                                    5'h10,
-                                    5'h0C,
-                                    5'h08,
-                                    5'h04,
-                                    5'h00
+                                    8'h14,
+                                    8'h10,
+                                    8'h0C,
+                                    8'h08,
+                                    8'h04,
+                                    8'h00
                                     };
 
 wire [REGISTERS_NUMBER - 1 : 0] sys_read_req;

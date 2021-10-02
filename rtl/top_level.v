@@ -72,6 +72,7 @@ module dsi_host_top(
     input  wire             clk_in                  ,
     input  wire             rst_n_in                ,
     /* DDR */
+    `ifdef DDR_EN
     inout  wire [16-1:0]         mcb3_dram_dq            ,
     output wire [14-1:0]         mcb3_dram_a             ,
     output wire [3-1:0]          mcb3_dram_ba            ,
@@ -98,6 +99,8 @@ module dsi_host_top(
     output wire             mcb3_dram_ck_n          ,
     // input  wire             rzq3                    ,
     // input  wire             zio3                    ,
+    `endif
+    `ifdef DSI_EN
     /* DPHY */
     output  wire [3:0]      dphy_data_hs_out_p      ,
     output  wire [3:0]      dphy_data_hs_out_n      ,
@@ -107,16 +110,20 @@ module dsi_host_top(
     output  wire            dphy_clk_hs_out_n       ,
     output  wire            dphy_clk_lp_out_p       ,
     output  wire            dphy_clk_lp_out_n       ,
+    `endif
+    `ifdef HDMI_EN
     /* HDMI parallel */
     input   wire [24-1:0]   hdmi_data               ,
     input   wire            hdmi_hs                 ,
     input   wire            hdmi_vs                 ,
     input   wire            hdmi_de                 ,
     input   wire            hdmi_clk                ,
-
+    `endif
+    `ifdef I2C_EN
     /* I2C ADV */
     inout   wire            i2c_scl                 ,
     inout   wire            i2c_sda                 ,
+    `endif
     /* I2C EEPROM */
     /* LED */
     output wire             led_out                 ,
@@ -135,10 +142,10 @@ localparam [ 0:0] ENABLE_MUL = 0;
 localparam [ 0:0] ENABLE_DIV = 0;
 localparam [ 0:0] ENABLE_IRQ_QREGS = 1;
 localparam [31:0] PROGADDR_RESET =32'h0100_0000;
-localparam [31:0] PROGADDR_IRQ = 32'h0100_0010;
+localparam [31:0] PROGADDR_IRQ = 32'h0100_00F5;
 parameter integer MEM_WORDS = 8192;
 // parameter [31:0] STACKADDR = 32'h0000_0000 + (4*MEM_WORDS);
-parameter [31:0] STACKADDR = 32'h0100_0800;       // end of memory
+parameter [31:0] STACKADDR = 32'h0100_0880;       // end of memory
 
 wire c3_sys_rst_i;
 wire sys_clk;
@@ -357,6 +364,8 @@ wire          i2c_2_irq;
 assign  irq_vec = 32'b0;
 
 //* Reset Controller
+`ifdef HDMI_EN
+
 `ifdef SPARTAN7
 assign hdmi_clk_buf = hdmi_clk;
 `else
@@ -366,6 +375,8 @@ IBUFG #(
       .O(hdmi_clk_buf), // Clock buffer output
       .I(hdmi_clk)  // Clock buffer input (connect directly to top-level port)
    );
+`endif
+
 `endif
 
  por_controller#(
@@ -381,7 +392,12 @@ IBUFG #(
     .pll_2_locked                (1'b1    ), //
 `else
     .pll_1_locked                (sys_pll_locked    ), //
+`ifdef DDR_EN
     .pll_2_locked                (c3_calib_done    ), //
+`else
+    .pll_2_locked                (1'b1    ), //
+`endif
+
 `endif
 
     .clk_1_in                    (sys_clk           ),
@@ -519,7 +535,7 @@ interconnect_mod #(
     .m0_bus_byteenable          (ram_mem_byteenable     ),
     .m0_bus_waitrequest         (ram_mem_waitrequest    ),
     `endif
-    `ifdef HDMI_EN
+    // `ifdef HDMI_EN
     //* Master port 1
     .m1_bus_addr                (ctrl_hdmi_address              ),
     .m1_bus_read                (ctrl_hdmi_read                 ),
@@ -529,7 +545,7 @@ interconnect_mod #(
     .m1_bus_writedata           (ctrl_hdmi_writedata            ),
     .m1_bus_byteenable          (ctrl_hdmi_byteenable           ),
     .m1_bus_waitrequest         (ctrl_hdmi_waitrequest          ),
-    `endif
+    // `endif
     `ifdef PIX_READER_EN
     //* Master port 2
     .m2_bus_addr                (ctrl_pix_reader_address       ),
@@ -552,15 +568,6 @@ interconnect_mod #(
     .m3_bus_byteenable          (ctrl_dsi_byteenable     ),
     .m3_bus_waitrequest         (ctrl_dsi_waitrequest    ),
     `endif
-    //* Master port 4
-    .m4_bus_addr                (ctrl_prog_mem_address          ),
-    .m4_bus_read                (ctrl_prog_mem_read             ),
-    .m4_bus_readdata            (ctrl_prog_mem_readdata         ),
-    .m4_bus_response            (ctrl_prog_mem_response         ),
-    .m4_bus_write               (ctrl_prog_mem_write            ),
-    .m4_bus_writedata           (ctrl_prog_mem_writedata        ),
-    .m4_bus_byteenable          (ctrl_prog_mem_byteenable       ),
-    .m4_bus_waitrequest         (ctrl_prog_mem_waitrequest      ),
 
     `ifdef USART_EN
     //* Master port 5
@@ -613,11 +620,66 @@ interconnect_mod #(
     .m9_bus_write               (ctrl_pg_write          ),
     .m9_bus_writedata           (ctrl_pg_writedata      ),
     .m9_bus_byteenable          (ctrl_pg_byteenable     ),
-    .m9_bus_waitrequest         (ctrl_pg_waitrequest    )
+    .m9_bus_waitrequest         (ctrl_pg_waitrequest    ),
     `endif
+
+    //* Master port 4
+    .m4_bus_addr                (ctrl_prog_mem_address          ),
+    .m4_bus_read                (ctrl_prog_mem_read             ),
+    .m4_bus_readdata            (ctrl_prog_mem_readdata         ),
+    .m4_bus_response            (ctrl_prog_mem_response         ),
+    .m4_bus_write               (ctrl_prog_mem_write            ),
+    .m4_bus_writedata           (ctrl_prog_mem_writedata        ),
+    .m4_bus_byteenable          (ctrl_prog_mem_byteenable       ),
+    .m4_bus_waitrequest         (ctrl_prog_mem_waitrequest      )
 );
 
 //* GPIO
+
+
+`ifdef DEBUG_HW
+
+(* dont_touch = "true" *) reg [M4_ADDR_WIDTH-1:0]           r_ctrl_prog_mem_address;
+(* dont_touch = "true" *) reg                               r_ctrl_prog_mem_read;
+(* dont_touch = "true" *) reg [31:0]                        r_ctrl_prog_mem_readdata;
+(* dont_touch = "true" *) reg [1:0]                         r_ctrl_prog_mem_response;
+(* dont_touch = "true" *) reg                               r_ctrl_prog_mem_write;
+(* dont_touch = "true" *) reg [31:0]                        r_ctrl_prog_mem_writedata;
+(* dont_touch = "true" *) reg [3:0]                         r_ctrl_prog_mem_byteenable;
+(* dont_touch = "true" *) reg                               r_ctrl_prog_mem_waitrequest;
+
+always @(posedge sys_clk) begin
+    r_ctrl_prog_mem_address         <= ctrl_prog_mem_address;
+    r_ctrl_prog_mem_read            <= ctrl_prog_mem_read;
+    r_ctrl_prog_mem_readdata        <= ctrl_prog_mem_readdata;
+    r_ctrl_prog_mem_response        <= ctrl_prog_mem_response;
+    r_ctrl_prog_mem_write           <= ctrl_prog_mem_write;
+    r_ctrl_prog_mem_writedata       <= ctrl_prog_mem_writedata;
+    r_ctrl_prog_mem_byteenable      <= ctrl_prog_mem_byteenable;
+    r_ctrl_prog_mem_waitrequest     <= ctrl_prog_mem_waitrequest;
+end
+
+(* dont_touch = "true" *) reg    [32 - 1:0]                  r_s0_bus_addr;
+(* dont_touch = "true" *) reg                                r_s0_bus_read;
+(* dont_touch = "true" *) reg    [32-1:0]                    r_s0_bus_readdata;
+(* dont_touch = "true" *) reg    [1:0]                       r_s0_bus_response;
+(* dont_touch = "true" *) reg                                r_s0_bus_write;
+(* dont_touch = "true" *) reg    [32-1:0]                    r_s0_bus_writedata;
+(* dont_touch = "true" *) reg    [3:0]                       r_s0_bus_byteenable;
+(* dont_touch = "true" *) reg                                r_s0_bus_waitrequest;
+
+always @(posedge sys_clk) begin
+    r_s0_bus_addr           <= s0_bus_addr;
+    r_s0_bus_read           <= s0_bus_read;
+    r_s0_bus_readdata       <= s0_bus_readdata;
+    r_s0_bus_response       <= s0_bus_response;
+    r_s0_bus_write          <= s0_bus_write;
+    r_s0_bus_writedata      <= s0_bus_writedata;
+    r_s0_bus_byteenable     <= s0_bus_byteenable;
+    r_s0_bus_waitrequest    <= s0_bus_waitrequest;
+end
+
+`endif
 
 reg [31:0] gpio_reg;
 
@@ -716,6 +778,7 @@ core_axi_bridge core_axi_bridge_0(
 );
 
 `else
+
 assign ram_mem_readdata         = 32'b0;
 assign ram_mem_response         = 'b0;
 assign ram_mem_waitrequest      = 'b0;
