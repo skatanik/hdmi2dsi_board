@@ -142,10 +142,11 @@ localparam [ 0:0] ENABLE_MUL = 0;
 localparam [ 0:0] ENABLE_DIV = 0;
 localparam [ 0:0] ENABLE_IRQ_QREGS = 1;
 localparam [31:0] PROGADDR_RESET =32'h0100_0000;
-localparam [31:0] PROGADDR_IRQ = 32'h0100_00F5;
+localparam [31:0] PROGADDR_IRQ = 32'h0100_2800;
 parameter integer MEM_WORDS = 8192;
 // parameter [31:0] STACKADDR = 32'h0000_0000 + (4*MEM_WORDS);
-parameter [31:0] STACKADDR = 32'h0100_0880;       // end of memory
+
+parameter [31:0] STACKADDR = 32'h0100_2000;       // end of memory
 
 wire c3_sys_rst_i;
 wire sys_clk;
@@ -379,6 +380,7 @@ IBUFG #(
 
 `endif
 
+`ifndef NO_PLL
  por_controller#(
     .INP_RESYNC_SIZE(128)
 )por_controller_0(
@@ -415,18 +417,21 @@ IBUFG #(
     .clk_5_in                    (1'b0              ),
     .rst_5_out                   ()
 );
+`else
+assign sys_rst_n = rst_n_in;
+`endif
 
 
 //* RISC V core +
  picorv32_wrapper #(
     .STACKADDR(STACKADDR),
     .PROGADDR_RESET(PROGADDR_RESET),
-    .PROGADDR_IRQ(32'h0000_0000),
+    .PROGADDR_IRQ(PROGADDR_IRQ),
     .BARREL_SHIFTER(0),
     .COMPRESSED_ISA(0),
     .ENABLE_MUL(1),
     .ENABLE_DIV(1),
-    .ENABLE_IRQ_QREGS(0)
+    .ENABLE_IRQ_QREGS(1)
  ) picorv32_core (
     .clk                     (sys_clk               ),
     .rst_n                   (sys_rst_n             ),
@@ -1547,19 +1552,29 @@ wire CLKOUT3; //* 92.8 MHZ
 wire CLKOUT4; //* 32 MHz
 wire CLKOUT5; //* 333 MHz for DDR
 
-`ifdef SPARTAN7
-clk_wiz_0 main_pll(
-    .clk_out1   (sys_clk),
-    .clk_out2   (dsi_io_clk),
-    .clk_out3   (dsi_io_clk_clk),
-    .clk_out4   (dsi_phy_clk),
-    .clk_out5   (clk_in_sync),
-    .reset      (!rst_n_in),
-    .locked     (sys_pll_locked     ),
-    .clk_in1    (clk_in             )
-    );
+// `ifdef SPARTAN7
+// clk_wiz_0 main_pll(
+//     .clk_out1   (sys_clk),
+//     .clk_out2   (dsi_io_clk),
+//     .clk_out3   (dsi_io_clk_clk),
+//     .clk_out4   (dsi_phy_clk),
+//     .clk_out5   (clk_in_sync),
+//     .reset      (!rst_n_in),
+//     .locked     (sys_pll_locked     ),
+//     .clk_in1    (clk_in             )
+//     );
 
-assign clk_pre_pll = clk_in;
+// assign clk_pre_pll = clk_in;
+`ifdef NO_PLL
+IBUFG #(
+      .IOSTANDARD("DEFAULT")
+   ) IBUFG_inst (
+      .O(clk_pre_pll), // Clock buffer output
+      .I(clk_in)  // Clock buffer input (connect directly to top-level port)
+   );
+
+assign sys_clk = clk_pre_pll;
+
 `else
 // assign clk_pre_pll = clk_in;
 IBUFG #(

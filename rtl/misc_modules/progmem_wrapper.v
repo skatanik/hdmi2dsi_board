@@ -7,7 +7,7 @@ module progmem_wrapper(
 `ifdef SPARTAN7
     input   wire [11:0]             ctrl_address            ,
 `else
-    input   wire [11:0]              ctrl_address            , // 16K memory space
+    input   wire [13:0]              ctrl_address            , // 16K memory space
 `endif
 
     input   wire                    ctrl_read               ,
@@ -49,12 +49,19 @@ prgr_rom prgr_rom_0 (
   .clka(clk), // input clka
   .rsta     (!rst_n),
 //   .ena(1'b1), // input ena
-  .addra({20'b0, ctrl_address}), // input [31 : 0] addra
+  .addra({18'b0, ctrl_address}), // input [31 : 0] addra
   .douta(ctrl_readdata), // output [31 : 0] douta
   .dina     (ctrl_writedata),
   .wea      (ctrl_byteenable & {4{ctrl_write}})
 );
-
+// prgr_rom prgr_rom_0 (
+//   .a(ctrl_address[9:2]),
+//   .d(ctrl_writedata),
+//   .clk(clk),
+//   .we(ctrl_write),
+//   .qspo_rst(!rst_n),
+//   .qspo(ctrl_readdata)
+// );
 
 
 `endif

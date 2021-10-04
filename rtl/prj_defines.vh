@@ -3,6 +3,7 @@
 
 //`define DEBUG_HW
 
+//`define NO_PLL
 `define XILINX
 //`define SIMULATION
 //`define SPARTAN7
