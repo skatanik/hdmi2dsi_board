@@ -3,3 +3,4 @@
 /firmware.elf
 /prgr_rom.mif
 /start.o
+/disasm.S

@@ -38,16 +38,16 @@ int main(void)
     uint32_t second_timestamp;
     uint32_t timeout_counter = WAIT_TIMEOUT;
 
-    volatile td_state_enum current_state = STATE_WAIT_FB;
-    volatile uint8_t input_byte;
-    volatile uint16_t packet_size = 0;
-    volatile uint16_t received_crc = 0;
-    volatile uint16_t packet_crc;
-    volatile int bytes_counter = 0;
-    volatile uint32_t data_start_pointer = USER_START;
-    volatile uint32_t word_to_write;
+    td_state_enum current_state = STATE_WAIT_FB;
+    uint8_t input_byte;
+    uint16_t packet_size = 0;
+    uint16_t received_crc = 0;
+    uint16_t packet_crc;
+    int bytes_counter = 0;
+    uint32_t data_start_pointer = USER_START;
+    uint32_t word_to_write;
 
-    volatile uint8_t debug_led = 1;
+    uint8_t debug_led = 1;
 
     voidfunc_t f = (voidfunc_t)USER_START;
     voidfunc_t f_sec = (voidfunc_t)USER_START_SEC;
