@@ -142,11 +142,11 @@ localparam [ 0:0] ENABLE_MUL = 0;
 localparam [ 0:0] ENABLE_DIV = 0;
 localparam [ 0:0] ENABLE_IRQ_QREGS = 1;
 localparam [31:0] PROGADDR_RESET =32'h0100_0000;
-localparam [31:0] PROGADDR_IRQ = 32'h0100_2800;
+localparam [31:0] PROGADDR_IRQ = 32'h0100_0480; //h0100_0580;
 parameter integer MEM_WORDS = 8192;
 // parameter [31:0] STACKADDR = 32'h0000_0000 + (4*MEM_WORDS);
 
-parameter [31:0] STACKADDR = 32'h0100_2000;       // end of memory
+parameter [31:0] STACKADDR = 32'h0100_1800;       // end of memory
 
 wire c3_sys_rst_i;
 wire sys_clk;
@@ -1594,7 +1594,7 @@ PLL_BASE #(
     .CLKOUT0_DIVIDE(2),
     .CLKOUT1_DIVIDE(2),
     .CLKOUT2_DIVIDE(16),
-    .CLKOUT3_DIVIDE(30), // 10
+    .CLKOUT3_DIVIDE(10), // 10
     .CLKOUT4_DIVIDE(29),
     .CLKOUT5_DIVIDE(3),
     // CLKOUT0_DUTY_CYCLE - CLKOUT5_DUTY_CYCLE: Duty cycle for CLKOUT# clock output (0.01-0.99).
