@@ -470,7 +470,7 @@ parameter M0_ADDR_WIDTH = 18;//$clog2(!(32'hFFFC_0000));
 parameter M1_ADDR_WIDTH = 8;//$clog2(!(32'hFFFF_FF00));
 parameter M2_ADDR_WIDTH = 8;//$clog2(!(32'hFFFF_FF00));
 parameter M3_ADDR_WIDTH = 8;//$clog2(!(32'hFFFF_FF00));
-parameter M4_ADDR_WIDTH = 14;//$clog2(!(32'hFFFF_E000));
+parameter M4_ADDR_WIDTH = 15;//$clog2(!(32'hFFFF_C000));
 parameter M5_ADDR_WIDTH = 8;//$clog2(!(32'hFFFF_FF00));
 parameter M6_ADDR_WIDTH = 8;//$clog2(!(32'hFFFF_FF00));
 parameter M7_ADDR_WIDTH = 8;//$clog2(!(32'hFFFF_FF00));
@@ -502,7 +502,7 @@ interconnect_mod #(
     .M3_MASK(32'hFFFF_FF00),    //* DSI
     .M3_ADDR_W(M3_ADDR_WIDTH),
     .M4_BASE(32'h0100_0000),    //* PROG MEM
-    .M4_MASK(32'hFFFF_C000),    //* PROG MEM
+    .M4_MASK(32'hFFFF_8000),    //* PROG MEM
     .M4_ADDR_W(M4_ADDR_WIDTH),
     .M5_BASE(32'h0101_0400),    //* UART
     .M5_MASK(32'hFFFF_FF00),    //* UART
@@ -540,7 +540,7 @@ interconnect_mod #(
     .m0_bus_byteenable          (ram_mem_byteenable     ),
     .m0_bus_waitrequest         (ram_mem_waitrequest    ),
     `endif
-    // `ifdef HDMI_EN
+    `ifdef HDMI_EN
     //* Master port 1
     .m1_bus_addr                (ctrl_hdmi_address              ),
     .m1_bus_read                (ctrl_hdmi_read                 ),
@@ -550,7 +550,7 @@ interconnect_mod #(
     .m1_bus_writedata           (ctrl_hdmi_writedata            ),
     .m1_bus_byteenable          (ctrl_hdmi_byteenable           ),
     .m1_bus_waitrequest         (ctrl_hdmi_waitrequest          ),
-    // `endif
+    `endif
     `ifdef PIX_READER_EN
     //* Master port 2
     .m2_bus_addr                (ctrl_pix_reader_address       ),
