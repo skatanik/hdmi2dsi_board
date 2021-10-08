@@ -19,7 +19,7 @@
 // WRITE_REG(0x01010600, 1);
 /*
  */
-// riscv32-unknown-elf-elf2hex --bit-width 32 --input test_riscv.elf --output test_riscv.hex
+
 
 typedef enum
 {
@@ -38,23 +38,25 @@ int main(void)
     uint32_t second_timestamp;
     uint32_t timeout_counter = WAIT_TIMEOUT;
 
-    td_state_enum current_state = STATE_WAIT_FB;
-    uint8_t input_byte;
-    uint16_t packet_size = 0;
-    uint16_t received_crc = 0;
-    uint16_t packet_crc;
-    int bytes_counter = 0;
-    uint32_t data_start_pointer = USER_START;
-    uint32_t word_to_write;
+    volatile td_state_enum current_state = STATE_WAIT_FB;
+    volatile uint8_t input_byte;
+    volatile uint16_t packet_size = 0;
+    volatile uint16_t received_crc = 0;
+    volatile uint16_t packet_crc;
+    volatile int bytes_counter = 0;
+    volatile uint32_t data_start_pointer = USER_START;
+    volatile uint32_t word_to_write;
 
-    uint8_t debug_led = 1;
+    volatile uint8_t debug_led = 1;
 
     voidfunc_t f = (voidfunc_t)USER_START;
     voidfunc_t f_sec = (voidfunc_t)USER_START_SEC;
 
     USART_init(100);  // 115200
 
-    first_timestamp = SYS_TIMER_read_state();
+    // first_timestamp = SYS_TIMER_read_state();
+
+    USART_send_byte_blocking(0x20);
 
     while (1)
     {
@@ -91,12 +93,14 @@ int main(void)
                         packet_size = 0;
                         packet_size = ((uint16_t)input_byte << 8);
                         bytes_counter++;
+                        // USART_send_byte_blocking(input_byte);
                     } else
                     {
                         packet_size += input_byte;
                         current_state = STATE_WAIT_DATA_BYTE;
                         bytes_counter = 0;
                         word_to_write = 0;
+                        // USART_send_byte_blocking(input_byte);
                     }
                     packet_crc = crc16_byte(packet_crc, input_byte);
                     break;
@@ -137,6 +141,12 @@ int main(void)
                     } else
                     {
                         received_crc += input_byte;
+
+                        // USART_send_byte_blocking(packet_crc);
+                        // USART_send_byte_blocking(packet_crc>>8);
+                        // USART_send_byte_blocking(" ");
+                        // USART_send_byte_blocking(received_crc);
+                        // USART_send_byte_blocking(received_crc>>8);
 
                         // WRITE_REG(0x10000000, (packet_crc));
 

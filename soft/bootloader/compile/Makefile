@@ -27,7 +27,7 @@ $(OUTPUT): $(LDS) $(OBJS)
 	echo "Step 2"
 	${CC} -g -O0 -Wl,--gc-sections -march=rv32ima -mabi=ilp32 -o $(OUTPUT).elf $(LDFLAGS) -nostartfiles $(OBJS) -lm -T $(LDS)
 	${OBJCOPY} -O binary $(OUTPUT).elf $(OUTPUT).bin
-#   ${OBJDUMP} -D $(OUTPUT).elf > disasm.S
+	${OBJDUMP} -D $(OUTPUT).elf > disasm.S
 	$(SIZE) $(OUTPUT).elf
 #	../tools/genraminit $(OUTPUT).bin 1300 0 0 > $(OUTPUT).ram
 #	../tools/genmeminit $(OUTPUT).bin 1300 0 0 > $(OUTPUT).mem

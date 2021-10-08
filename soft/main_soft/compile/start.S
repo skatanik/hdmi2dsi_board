@@ -48,22 +48,22 @@ li a0, 0x10000000
 li a1, 54
 sw a1, 0(a0)
 
-  la      gp, _gp                 # Initialize global pointer
-  la      sp, _fstack
+la      gp, _gp                 # Initialize global pointer
+la      sp, _fstack
 
-  la t0, _fexception_stack
-  csrrw t0, mscratch, t0
+la t0, _fexception_stack
+csrrw t0, mscratch, t0
 
 # clear the bss segment
-  la  t0, _fbss
-  la  t1, _end
+la  t0, _fbss
+la  t1, _end
 
-  sw  zero,0(t0)
-  addi  t0, t0, 4
-  bltu  t0, t1, 1b
+# sw  zero,0(t0)
+# addi  t0, t0, 4
+# bltu  t0, t1, 1b
 
-  li a0, 0x10000000
-  li a1, 54
-  sw a1, 0(a0)
+li a0, 0x10000000
+li a1, 46
+sw a1, 0(a0)
 
-  call    main
+call    main

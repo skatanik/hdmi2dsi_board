@@ -133,6 +133,6 @@ SECTIONS
   PROVIDE( end = . );
   _end = ALIGN(8);
 
-  PROVIDE( _fstack = 0x01003C00 );
-  PROVIDE( _fexception_stack = 0x01003C00 + 0x200 );
+  PROVIDE( _fstack = 0x01001800 );
+  PROVIDE( _fexception_stack = 0x01001800 + 0x800 );
 }
