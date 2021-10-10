@@ -52,6 +52,15 @@ typedef struct
     volatile uint32_t usart_reg_curr_val;
 }td_sys_timer_struct;
 
+typedef struct
+{
+    volatile uint32_t gpio_cr;
+}td_gpio_struct;
+
+typedef struct
+{
+    volatile uint32_t gpio_cr;
+}td_patget_struct;
 
 #define HDMI_RECV  ((td_hdmi_recv_struct *) 0x01010000)
 #define DSI  ((td_dsi_struct *) 0x01010300)
@@ -59,6 +68,8 @@ typedef struct
 #define UART  ((td_usart_struct *) 0x01010400)
 #define I2C_HDMI  ((td_hdmi_recv_struct *) 0x01010500)
 #define SYS_TIMER  ((td_sys_timer_struct *) 0x1010700)
+#define GPIO  ((td_gpio_struct *) 0x01010600)
+#define PATTERN_GENERATOR  ((td_patget_struct *) 0x01010100)
 
 
 #define READ_FLAG_STATUS(reg, flag) (reg & (flag))

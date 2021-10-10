@@ -139,6 +139,6 @@ SECTIONS
   /* PROVIDE( _fstack = 0x01002800 );
   PROVIDE( _fexception_stack = 0x01002800 + 0x80 ); */
 
-  PROVIDE( _fstack = 0x00002800 );
-  PROVIDE( _fexception_stack = 0x00002800 + 0x100 );
+  PROVIDE( _fstack = 0x01002800 );
+  PROVIDE( _fexception_stack = 0x01002800 + 0x100 );
 }

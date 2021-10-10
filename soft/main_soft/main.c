@@ -26,37 +26,65 @@ int main(void)
 
     USART_init(100);
 
+    // GPIO->gpio_cr |= 1<<2; // set PWR EN
+    // GPIO->gpio_cr |= 1<<1; // set BL_en
+
+    GPIO->gpio_cr ^= 0;
+
+    GPIO->gpio_cr |= 1<<8; // Remove RESET
+
+    while(!(GPIO->gpio_cr & (1<<16))) // wait until there is pwren signal from the display
+    {}
+
+    GPIO->gpio_cr |= 1<<2; // enable diff power
+
+    // send sleep out CMD
+    // run DSI clk
+    DSI->dsi_reg_cr |= 0x00000002;
+    while(!(DSI->dsi_reg_isr & 0x00000002)) {};
+
+    // send Display ON
+
+
+    // // run lanes
+    DSI->dsi_reg_cr |= 0x00000004;
+    while(!(DSI->dsi_reg_isr & 0x00000004)) {};
+
+    // // PIX_READER->control_reg = 1;
+    // // run assembler
+    DSI->dsi_reg_cr |= 0x00000001;
+
+    GPIO->gpio_cr |= 1<<1; // backlight enable
+
     while (1)
     {
+        GPIO->gpio_cr ^= 1;
 
-        if(USART_read_byte_blocking(&data_recv) == 0)
+        for(kk = 0; kk < 50000; kk++)
+        {}
+        // data_recv++;
+
+        if(!USART_read_byte_blocking(&data_recv))
         {
-            WRITE_REG(0x01010600, led_state);
-            led_state++;
+            // if(data_recv == 0x21)
+            //     GPIO->gpio_cr |= 1<<2;
+            // else if(data_recv == 0x20)
+            //     GPIO->gpio_cr &= ~(1<<2);
 
-            USART_send_byte_blocking(data_recv);
-
-        } else {
-
-            // USART_send_byte_blocking(data_recv);
-            // printf("Hello from board");
-            // led_state ++;
-            WRITE_REG(0x01010600, 0);
-            for(kk = 0; kk < 50000; kk++)
-            {}
-            // data_recv++;
-
-            USART_send_byte_blocking(data_recv);
-
-            data_recv++;
-            // WRITE_REG(0x01002D70, 0x01002D74);
-
-            WRITE_REG(0x01010600, 1);
-
-            // led_state++;
-            for(kk = 0; kk < 50000; kk++)
-            {}
+            if(data_recv == 0x11)
+                GPIO->gpio_cr |= 1<<1;
+            else if(data_recv == 0x10)
+                GPIO->gpio_cr &= ~(1<<1);
         }
+
+        data_recv++;
+        // WRITE_REG(0x01002D70, 0x01002D74);
+
+        GPIO->gpio_cr ^= 1;
+
+        // led_state++;
+        for(kk = 0; kk < 50000; kk++)
+        {}
     }
 
   return 0;
