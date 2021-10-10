@@ -127,6 +127,14 @@ module dsi_host_top(
     /* I2C EEPROM */
     /* LED */
     output wire             led_out                 ,
+    output wire             lcd_bl_en               ,
+    output wire             lcd_pwren               ,
+    // DSI GPIO
+    output wire             dsi_reset_n             ,
+    output wire             dsi_gpio_0              ,
+    output wire             dsi_gpio_1              ,
+    output wire             dsi_gpio_2              ,
+    input  wire             dsi_gpio_3              ,
     /* UART */
     input  wire             usart_rxd               ,
     output wire             usart_txd
@@ -689,15 +697,36 @@ end
 reg [31:0] gpio_reg;
 
 always @(posedge sys_clk or negedge sys_rst_n) begin
-    if(!sys_rst_n)              gpio_reg <= 'b0;
-    else if(ctrl_gpio_write)    gpio_reg <= ctrl_gpio_writedata;
+    if(!sys_rst_n)              gpio_reg[15:0] <= 'b0;
+    else if(ctrl_gpio_write)    gpio_reg[15:0] <= ctrl_gpio_writedata;
 end
 
-assign ctrl_gpio_waitrequest = 0;
-assign ctrl_gpio_readdata = 0;
+always @(posedge sys_clk or negedge sys_rst_n) begin
+    if(!sys_rst_n)              gpio_reg[31:16] <= 'b0;
+    else                        gpio_reg[31:16] <= {15'b0, dsi_gpio_3};
+end
+
+assign ctrl_gpio_readdata = gpio_reg;
 assign ctrl_gpio_response = 0;
 
+reg[3:0] r_gpio_waitrequest;
+
+assign ctrl_gpio_waitrequest = (ctrl_gpio_write || ctrl_gpio_read) && !(r_gpio_waitrequest[3]);
+
+always @(posedge sys_clk or negedge sys_rst_n) begin
+    if(!sys_rst_n)                                  r_gpio_waitrequest <= 4'b0;
+    else if(ctrl_gpio_write || ctrl_gpio_read)      r_gpio_waitrequest <= {r_gpio_waitrequest[2:0], 1'b1};
+    else if(r_gpio_waitrequest[3])                  r_gpio_waitrequest <= 4'b0;
+end
+
 assign led_out = gpio_reg[0];
+assign lcd_bl_en = gpio_reg[1];
+assign lcd_pwren =  gpio_reg[2];
+
+assign dsi_reset_n  = gpio_reg[8];
+assign dsi_gpio_0   = 1'b0;
+// assign dsi_gpio_1   = gpio_reg[18];
+// assign dsi_gpio_2   = gpio_reg[19];
 
 reg [24:0] counter;
 reg led_state;
@@ -1334,14 +1363,14 @@ assign st_ready = 'b1;
 `ifdef DSI_EN
 //* DSI +
 dsi_tx_top #(
-    .LINE_WIDTH            (640),
-    .BITS_PER_PIXEL        (24),
-    .BLANK_TIME            (640 + 200),
-    .BLANK_TIME_HBP_ACT    (70),
-    .VSA_LINES_NUMBER      (2),
-    .VBP_LINES_NUMBER      (4),
-    .IMAGE_HEIGHT          (480),
-    .VFP_LINES_NUMBER      (4)
+    .LINE_WIDTH            (640     ),
+    .BITS_PER_PIXEL        (24      ),
+    .BLANK_TIME            (640+40  ),
+    .BLANK_TIME_HBP_ACT    (40      ),
+    .VSA_LINES_NUMBER      (3       ),
+    .VBP_LINES_NUMBER      (13      ),
+    .IMAGE_HEIGHT          (1136    ),
+    .VFP_LINES_NUMBER      (348     )
     ) dsi_tx_top_0 (
     /********* System signals *********/
     .clk_sys                                (sys_clk                    ),
@@ -1498,8 +1527,8 @@ assign ctrl_sys_timer_waitrequest = 'b0;
 `ifdef PG_EN
 //* PAttern GENERATOR
 pattern_generator  #(
-    .IMG_HEIGH(24),
-    .IMG_WIDTH(24)
+    .IMG_HEIGH(1136),
+    .IMG_WIDTH(640)
 )pattern_generator_0(
     .clk                        (sys_clk                ),
     .rst_n                      (sys_rst_n              ),
