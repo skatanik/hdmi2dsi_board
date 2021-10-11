@@ -39,11 +39,19 @@ int main(void)
     GPIO->gpio_cr |= 1<<2; // enable diff power
 
     // send sleep out CMD
+    DSI->dsi_reg_cmd = 0x11;
+    DSI->dsi_reg_cr|= 1<<3;
+    while(!(DSI->dsi_reg_isr & 0x00000002)) {};
+
+
     // run DSI clk
     DSI->dsi_reg_cr |= 0x00000002;
     while(!(DSI->dsi_reg_isr & 0x00000002)) {};
 
     // send Display ON
+    DSI->dsi_reg_cmd = 0x29;
+    DSI->dsi_reg_cr |= 1<<3;
+    while(!(DSI->dsi_reg_isr & 0x00000002)) {};
 
 
     // // run lanes
