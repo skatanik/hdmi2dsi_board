@@ -16,6 +16,9 @@
 
 #define WAIT_TIMEOUT 11600000       // 0.5 sec
 
+#define FW_REG_VAL 0x59dbf24b
+#define FW_TIMER_INIT_VAL   30
+
 // WRITE_REG(0x01010600, 1);
 /*
  */
@@ -52,16 +55,28 @@ int main(void)
     voidfunc_t f = (voidfunc_t)USER_START;
     voidfunc_t f_sec = (voidfunc_t)USER_START_SEC;
 
+    uint32_t wait_timer = FW_TIMER_INIT_VAL;
+    uint8_t main_firmware_flag = 0;
+
     USART_init(100);  // 115200
 
     // first_timestamp = SYS_TIMER_read_state();
 
     USART_send_byte_blocking(0x20);
 
-    while (1)
+    uint32_t data_in_fw_reg = 0;
+    READ_REG(FIRMWARE_REG_ADDR, data_in_fw_reg);
+
+    if(data_in_fw_reg == FW_REG_VAL)
+        main_firmware_flag = 1;
+
+    while (!main_firmware_flag || (wait_timer>0)) // waint until timer ends or if there is no firmware forever
     {
+        wait_timer--;
         if(USART_read_byte_blocking(&input_byte) == 0)     // wait for data to receive
-        {   // if data is received process it
+        {
+            wait_timer = FW_TIMER_INIT_VAL;
+            // if data is received process it
             // check current state
             switch(current_state)
             {
@@ -152,6 +167,7 @@ int main(void)
 
                         if(packet_crc == received_crc)
                         {
+                            WRITE_REG(FIRMWARE_REG_ADDR, FW_REG_VAL); // write fw reg val
                             USART_send_byte_blocking(0x88); // send success
                             // run new code
                             f();
@@ -199,6 +215,8 @@ int main(void)
         //     // f_sec();
         // }
     }
+    // if we got here than there is a valid main firmvare and timer is out, so lets run the main soft
+    f();
 
   return 0;
 }

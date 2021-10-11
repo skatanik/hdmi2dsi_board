@@ -11,9 +11,10 @@ SIZE =		$(CROSS_COMPILE)size
 
 BOOT_ADDR = 0x01000C00 # 3072 bytes for bootloader
 BOOT_ADDR_SEC = 0x01001800 # 3072 bytes for bootloader and then for the secondary firmware
+FIRMWARE_REG_ADDR = 0x01007FF0 # main firmware existance flag reg addr
 
 INCLUDE_PATHS = -I. -I./../ -I./../../bsp/
-CFLAGS = -g -O0 -march=rv32ima -mabi=ilp32  -fdata-sections -ffunction-sections $(INCLUDE_PATHS)  -Wall -DUSER_START=$(BOOT_ADDR) -DUSER_START_SEC=$(BOOT_ADDR_SEC)
+CFLAGS = -g -O0 -march=rv32ima -mabi=ilp32  -fdata-sections -ffunction-sections $(INCLUDE_PATHS)  -Wall -DUSER_START=$(BOOT_ADDR) -DUSER_START_SEC=$(BOOT_ADDR_SEC) -DFIRMWARE_REG_ADDR=$(FIRMWARE_REG_ADDR)
 LDFLAGS = -Wl,--gc-sections
 OBJS = ./../main.o start.o ./../../bsp/lib_usart.o ./../../bsp/lib_sys_timer.o ./../../bsp/crc_16.o
 LDS = boot.ld
