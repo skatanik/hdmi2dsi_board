@@ -249,66 +249,66 @@ NET "mcb3_zio" LOC = B3;
 ##################################################################################
 
 #DSI HS LINES
-NET "dphy_clk_hs_out_p" LOC = B15;
+NET "dphy_clk_hs_out_p" LOC = D14;
 #15_p
-NET "dphy_clk_hs_out_n" LOC = B16;
+NET "dphy_clk_hs_out_n" LOC = D16;
 #15_n
-NET "dphy_data_hs_out_p[0]" LOC = F15;
+NET "dphy_data_hs_out_p[1]" LOC = F15;
 #30_p
-NET "dphy_data_hs_out_n[0]" LOC = F16;
+NET "dphy_data_hs_out_n[1]" LOC = F16;
 #30_n
-NET "dphy_data_hs_out_p[1]" LOC = H15;
+NET "dphy_data_hs_out_p[0]" LOC = H15;
 #24_p
-NET "dphy_data_hs_out_n[1]" LOC = H16;
+NET "dphy_data_hs_out_n[0]" LOC = H16;
 #24_n
-NET "dphy_data_hs_out_p[2]" LOC = D14;
+NET "dphy_data_hs_out_p[2]" LOC = C15;
 #07p
-NET "dphy_data_hs_out_n[2]" LOC = D16;
+NET "dphy_data_hs_out_n[2]" LOC = C16;
 #07n
-NET "dphy_data_hs_out_p[3]" LOC = C15;
+NET "dphy_data_hs_out_p[3]" LOC = B15;
 #07p
-NET "dphy_data_hs_out_n[3]" LOC = C16;
+NET "dphy_data_hs_out_n[3]" LOC = B16;
 #07n
 
 #DSI LP LINES
-NET "dphy_data_lp_out_p[0]" LOC = E16;
+NET "dphy_data_lp_out_p[1]" LOC = E16;
 #28_n
-NET "dphy_data_lp_out_p[0]" IOSTANDARD = LVCMOS18;
-
-NET "dphy_data_lp_out_n[0]" LOC = G14;
-#32_p
-NET "dphy_data_lp_out_n[0]" IOSTANDARD = LVCMOS18;
-
-NET "dphy_data_lp_out_p[1]" LOC = G16;
-#21_n
 NET "dphy_data_lp_out_p[1]" IOSTANDARD = LVCMOS18;
 
-NET "dphy_data_lp_out_n[1]" LOC = G12;
-#28_p
+NET "dphy_data_lp_out_n[1]" LOC = G14;
+#32_p
 NET "dphy_data_lp_out_n[1]" IOSTANDARD = LVCMOS18;
 
-NET "dphy_data_lp_out_p[2]" LOC = G11;
+NET "dphy_data_lp_out_p[0]" LOC = G16;
+#21_n
+NET "dphy_data_lp_out_p[0]" IOSTANDARD = LVCMOS18;
+
+NET "dphy_data_lp_out_n[0]" LOC = G12;
+#28_p
+NET "dphy_data_lp_out_n[0]" IOSTANDARD = LVCMOS18;
+
+NET "dphy_data_lp_out_p[2]" LOC = F14;
 #4_n
 NET "dphy_data_lp_out_p[2]" IOSTANDARD = LVCMOS18;
 
-NET "dphy_data_lp_out_n[2]" LOC = F13;
+NET "dphy_data_lp_out_n[2]" LOC = E15;
 #11_p
 NET "dphy_data_lp_out_n[2]" IOSTANDARD = LVCMOS18;
 
-NET "dphy_data_lp_out_p[3]" LOC = F14;
+NET "dphy_data_lp_out_p[3]" LOC = E12;
 #4_n
 NET "dphy_data_lp_out_p[3]" IOSTANDARD = LVCMOS18;
 
-NET "dphy_data_lp_out_n[3]" LOC = E15;
+NET "dphy_data_lp_out_n[3]" LOC = F12;
 #11_p
 NET "dphy_data_lp_out_n[3]" IOSTANDARD = LVCMOS18;
 
 
-NET "dphy_clk_lp_out_p" LOC = E12;
+NET "dphy_clk_lp_out_p" LOC = G11;
 #11_n
 NET "dphy_clk_lp_out_p" IOSTANDARD = LVCMOS18;
 
-NET "dphy_clk_lp_out_n" LOC = F12;
+NET "dphy_clk_lp_out_n" LOC = F13;
 #19_p
 NET "dphy_clk_lp_out_n" IOSTANDARD = LVCMOS18;
 
@@ -383,3 +383,13 @@ NET "usart_txd" LOC = F9 | IOSTANDARD = LVCMOS33;
 
 #LED
 NET "led_out" LOC = R7 | IOSTANDARD = LVCMOS33;
+# LCD_PWREN
+NET "lcd_bl_en" LOC = D11 | IOSTANDARD = LVCMOS33;
+# LCD BL EN
+NET "lcd_pwren" LOC = A14 | IOSTANDARD = LVCMOS33;
+# DSI GPIOs
+NET "dsi_reset_n"   LOC = H11 | IOSTANDARD = LVCMOS18;
+NET "dsi_gpio_0"    LOC = J11 | IOSTANDARD = LVCMOS18;
+#NET "dsi_gpio_1"    LOC = J13 | IOSTANDARD = LVCMOS18;
+#NET "dsi_gpio_2"    LOC = H14 | IOSTANDARD = LVCMOS18;
+NET "dsi_gpio_3"    LOC = J12 | IOSTANDARD = LVCMOS18;
