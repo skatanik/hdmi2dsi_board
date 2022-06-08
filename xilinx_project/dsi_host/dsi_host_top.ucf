@@ -53,12 +53,21 @@ CONFIG MCB_PERFORMANCE  = EXTENDED;
 ## Clock constraints
 ############################################################################
 NET "clk_in" TNM_NET = "clk_in";
-TIMESPEC TS_sys_clk_i = PERIOD "clk_in" 32 MHz HIGH 50 %;
+TIMESPEC TS_clk_in_i = PERIOD "clk_in" 32 MHz HIGH 50 %;
 NET "clk_in" LOC = T7;
 NET "clk_in" IOSTANDARD = LVCMOS33;
 # | PULLUP;
 NET "rst_n_in" LOC = N16;
 NET "rst_n_in" IOSTANDARD = LVCMOS18;
+
+NET "sys_clk" TNM_NET = "sys_clk";
+TIMESPEC TS_sys_clk_i = PERIOD "sys_clk" 100 MHz HIGH 50 %;
+NET "dsi_io_clk" TNM_NET = "dsi_io_clk";
+TIMESPEC TS_dsi_io_clk = PERIOD "dsi_io_clk" 464 MHz HIGH 50 %;
+NET "dsi_io_clk_clk" TNM_NET = "dsi_io_clk_clk";
+TIMESPEC TS_dsi_io_clk_clk = PERIOD "dsi_io_clk_clk" 464 MHz HIGH 50 %;
+NET "dsi_phy_clk" TNM_NET = "dsi_phy_clk";
+TIMESPEC TS_dsi_phy_clk = PERIOD "dsi_phy_clk" 58 MHz HIGH 50 %;
 ############################################################################
 #NET  "c3_calib_done"                               IOSTANDARD = LVCMOS33 ;
 #NET  "c3_calib_done"                               LOC = "C8" ;
@@ -271,19 +280,19 @@ NET "dphy_data_hs_out_n[3]" LOC = B16;
 #07n
 
 #DSI LP LINES
-NET "dphy_data_lp_out_p[1]" LOC = E16;
+NET "dphy_data_lp_out_p[1]" LOC = G14;
 #28_n
 NET "dphy_data_lp_out_p[1]" IOSTANDARD = LVCMOS18;
 
-NET "dphy_data_lp_out_n[1]" LOC = G14;
+NET "dphy_data_lp_out_n[1]" LOC = E16;
 #32_p
 NET "dphy_data_lp_out_n[1]" IOSTANDARD = LVCMOS18;
 
-NET "dphy_data_lp_out_p[0]" LOC = G16;
+NET "dphy_data_lp_out_p[0]" LOC = G12;
 #21_n
 NET "dphy_data_lp_out_p[0]" IOSTANDARD = LVCMOS18;
 
-NET "dphy_data_lp_out_n[0]" LOC = G12;
+NET "dphy_data_lp_out_n[0]" LOC = G16;
 #28_p
 NET "dphy_data_lp_out_n[0]" IOSTANDARD = LVCMOS18;
 
@@ -295,11 +304,11 @@ NET "dphy_data_lp_out_n[2]" LOC = E15;
 #11_p
 NET "dphy_data_lp_out_n[2]" IOSTANDARD = LVCMOS18;
 
-NET "dphy_data_lp_out_p[3]" LOC = E12;
+NET "dphy_data_lp_out_p[3]" LOC = F12;
 #4_n
 NET "dphy_data_lp_out_p[3]" IOSTANDARD = LVCMOS18;
 
-NET "dphy_data_lp_out_n[3]" LOC = F12;
+NET "dphy_data_lp_out_n[3]" LOC = E12;
 #11_p
 NET "dphy_data_lp_out_n[3]" IOSTANDARD = LVCMOS18;
 
@@ -313,69 +322,69 @@ NET "dphy_clk_lp_out_n" LOC = F13;
 NET "dphy_clk_lp_out_n" IOSTANDARD = LVCMOS18;
 
 #HDMI
-NET "hdmi_data[23]" LOC = E7;
-NET "hdmi_data[23]" IOSTANDARD = LVCMOS33;
-NET "hdmi_data[22]" LOC = D8;
-NET "hdmi_data[22]" IOSTANDARD = LVCMOS33;
-NET "hdmi_data[21]" LOC = F7;
-NET "hdmi_data[21]" IOSTANDARD = LVCMOS33;
-NET "hdmi_data[20]" LOC = D6;
-NET "hdmi_data[20]" IOSTANDARD = LVCMOS33;
-NET "hdmi_data[19]" LOC = D5;
-NET "hdmi_data[19]" IOSTANDARD = LVCMOS33;
-NET "hdmi_data[18]" LOC = C5;
-NET "hdmi_data[18]" IOSTANDARD = LVCMOS33;
-NET "hdmi_data[17]" LOC = A5;
-NET "hdmi_data[17]" IOSTANDARD = LVCMOS33;
-NET "hdmi_data[16]" LOC = C6;
-NET "hdmi_data[16]" IOSTANDARD = LVCMOS33;
-NET "hdmi_data[15]" LOC = B6;
-NET "hdmi_data[15]" IOSTANDARD = LVCMOS33;
-NET "hdmi_data[14]" LOC = A6;
-NET "hdmi_data[14]" IOSTANDARD = LVCMOS33;
-NET "hdmi_data[13]" LOC = E6;
-NET "hdmi_data[13]" IOSTANDARD = LVCMOS33;
-NET "hdmi_data[12]" LOC = C7;
-NET "hdmi_data[12]" IOSTANDARD = LVCMOS33;
-NET "hdmi_data[11]" LOC = A7;
-NET "hdmi_data[11]" IOSTANDARD = LVCMOS33;
-NET "hdmi_data[10]" LOC = C8;
-NET "hdmi_data[10]" IOSTANDARD = LVCMOS33;
-NET "hdmi_data[9]" LOC = B8;
-NET "hdmi_data[9]" IOSTANDARD = LVCMOS33;
-NET "hdmi_data[8]" LOC = A8;
-NET "hdmi_data[8]" IOSTANDARD = LVCMOS33;
-NET "hdmi_data[7]" LOC = D9;
-NET "hdmi_data[7]" IOSTANDARD = LVCMOS33;
-NET "hdmi_data[6]" LOC = C9;
-NET "hdmi_data[6]" IOSTANDARD = LVCMOS33;
-NET "hdmi_data[5]" LOC = A9;
-NET "hdmi_data[5]" IOSTANDARD = LVCMOS33;
-NET "hdmi_data[4]" LOC = E8;
-NET "hdmi_data[4]" IOSTANDARD = LVCMOS33;
-NET "hdmi_data[3]" LOC = B10;
-NET "hdmi_data[3]" IOSTANDARD = LVCMOS33;
-NET "hdmi_data[2]" LOC = A10;
-NET "hdmi_data[2]" IOSTANDARD = LVCMOS33;
-NET "hdmi_data[1]" LOC = E10;
-NET "hdmi_data[1]" IOSTANDARD = LVCMOS33;
-NET "hdmi_data[0]" LOC = E11;
-NET "hdmi_data[0]" IOSTANDARD = LVCMOS33;
-#NET "hdmi_rst_n " LOC = A12  | IOSTANDARD = LVCMOS33;
-NET "hdmi_hs" LOC = C11;
-NET "hdmi_hs" IOSTANDARD = LVCMOS33;
-NET "hdmi_vs" LOC = B12;
-NET "hdmi_vs" IOSTANDARD = LVCMOS33;
-NET "hdmi_de" LOC = A11;
-NET "hdmi_de" IOSTANDARD = LVCMOS33;
-NET "hdmi_clk" LOC = C10;
-NET "hdmi_clk" IOSTANDARD = LVCMOS33;
-
-#I2C
-NET "i2c_scl" LOC = C13;
-NET "i2c_scl" IOSTANDARD = LVCMOS33;
-NET "i2c_sda" LOC = A13;
-NET "i2c_sda" IOSTANDARD = LVCMOS33;
+#NET "hdmi_data[23]" LOC = E7;
+#NET "hdmi_data[23]" IOSTANDARD = LVCMOS33;
+#NET "hdmi_data[22]" LOC = D8;
+#NET "hdmi_data[22]" IOSTANDARD = LVCMOS33;
+#NET "hdmi_data[21]" LOC = F7;
+#NET "hdmi_data[21]" IOSTANDARD = LVCMOS33;
+#NET "hdmi_data[20]" LOC = D6;
+#NET "hdmi_data[20]" IOSTANDARD = LVCMOS33;
+#NET "hdmi_data[19]" LOC = D5;
+#NET "hdmi_data[19]" IOSTANDARD = LVCMOS33;
+#NET "hdmi_data[18]" LOC = C5;
+#NET "hdmi_data[18]" IOSTANDARD = LVCMOS33;
+#NET "hdmi_data[17]" LOC = A5;
+#NET "hdmi_data[17]" IOSTANDARD = LVCMOS33;
+#NET "hdmi_data[16]" LOC = C6;
+#NET "hdmi_data[16]" IOSTANDARD = LVCMOS33;
+#NET "hdmi_data[15]" LOC = B6;
+#NET "hdmi_data[15]" IOSTANDARD = LVCMOS33;
+#NET "hdmi_data[14]" LOC = A6;
+#NET "hdmi_data[14]" IOSTANDARD = LVCMOS33;
+#NET "hdmi_data[13]" LOC = E6;
+#NET "hdmi_data[13]" IOSTANDARD = LVCMOS33;
+#NET "hdmi_data[12]" LOC = C7;
+#NET "hdmi_data[12]" IOSTANDARD = LVCMOS33;
+#NET "hdmi_data[11]" LOC = A7;
+#NET "hdmi_data[11]" IOSTANDARD = LVCMOS33;
+#NET "hdmi_data[10]" LOC = C8;
+#NET "hdmi_data[10]" IOSTANDARD = LVCMOS33;
+#NET "hdmi_data[9]" LOC = B8;
+#NET "hdmi_data[9]" IOSTANDARD = LVCMOS33;
+#NET "hdmi_data[8]" LOC = A8;
+#NET "hdmi_data[8]" IOSTANDARD = LVCMOS33;
+#NET "hdmi_data[7]" LOC = D9;
+#NET "hdmi_data[7]" IOSTANDARD = LVCMOS33;
+#NET "hdmi_data[6]" LOC = C9;
+#NET "hdmi_data[6]" IOSTANDARD = LVCMOS33;
+#NET "hdmi_data[5]" LOC = A9;
+#NET "hdmi_data[5]" IOSTANDARD = LVCMOS33;
+#NET "hdmi_data[4]" LOC = E8;
+#NET "hdmi_data[4]" IOSTANDARD = LVCMOS33;
+#NET "hdmi_data[3]" LOC = B10;
+#NET "hdmi_data[3]" IOSTANDARD = LVCMOS33;
+#NET "hdmi_data[2]" LOC = A10;
+#NET "hdmi_data[2]" IOSTANDARD = LVCMOS33;
+#NET "hdmi_data[1]" LOC = E10;
+#NET "hdmi_data[1]" IOSTANDARD = LVCMOS33;
+#NET "hdmi_data[0]" LOC = E11;
+#NET "hdmi_data[0]" IOSTANDARD = LVCMOS33;
+##NET "hdmi_rst_n " LOC = A12  | IOSTANDARD = LVCMOS33;
+#NET "hdmi_hs" LOC = C11;
+#NET "hdmi_hs" IOSTANDARD = LVCMOS33;
+#NET "hdmi_vs" LOC = B12;
+#NET "hdmi_vs" IOSTANDARD = LVCMOS33;
+#NET "hdmi_de" LOC = A11;
+#NET "hdmi_de" IOSTANDARD = LVCMOS33;
+#NET "hdmi_clk" LOC = C10;
+#NET "hdmi_clk" IOSTANDARD = LVCMOS33;
+#
+##I2C
+#NET "i2c_scl" LOC = C13;
+#NET "i2c_scl" IOSTANDARD = LVCMOS33;
+#NET "i2c_sda" LOC = A13;
+#NET "i2c_sda" IOSTANDARD = LVCMOS33;
 
 #USART
 NET "usart_rxd" LOC = F10 | IOSTANDARD = LVCMOS33;
@@ -390,6 +399,6 @@ NET "lcd_pwren" LOC = A14 | IOSTANDARD = LVCMOS33;
 # DSI GPIOs
 NET "dsi_reset_n"   LOC = H11 | IOSTANDARD = LVCMOS18;
 NET "dsi_gpio_0"    LOC = J11 | IOSTANDARD = LVCMOS18;
-#NET "dsi_gpio_1"    LOC = J13 | IOSTANDARD = LVCMOS18;
-#NET "dsi_gpio_2"    LOC = H14 | IOSTANDARD = LVCMOS18;
+NET "dsi_gpio_1"    LOC = J13 | IOSTANDARD = LVCMOS18;
+NET "dsi_gpio_2"    LOC = H14 | IOSTANDARD = LVCMOS18;
 NET "dsi_gpio_3"    LOC = J12 | IOSTANDARD = LVCMOS18;

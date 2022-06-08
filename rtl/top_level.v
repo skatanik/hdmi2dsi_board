@@ -703,7 +703,7 @@ end
 
 always @(posedge sys_clk or negedge sys_rst_n) begin
     if(!sys_rst_n)              gpio_reg[31:16] <= 'b0;
-    else                        gpio_reg[31:16] <= {15'b0, dsi_gpio_3};
+    else                        gpio_reg[31:16] <= {11'b0, dsi_gpio_0, dsi_gpio_1, dsi_gpio_2, dsi_gpio_3};
 end
 
 assign ctrl_gpio_readdata = gpio_reg;
@@ -724,9 +724,9 @@ assign lcd_bl_en = gpio_reg[1];
 assign lcd_pwren =  gpio_reg[2];
 
 assign dsi_reset_n  = gpio_reg[8];
-assign dsi_gpio_0   = 1'b0;
-// assign dsi_gpio_1   = gpio_reg[18];
-// assign dsi_gpio_2   = gpio_reg[19];
+// assign dsi_gpio_0   = gpio_reg[9];
+// assign dsi_gpio_1   = gpio_reg[10];
+// assign dsi_gpio_2   = gpio_reg[11];
 
 reg [24:0] counter;
 reg led_state;
@@ -1358,19 +1358,24 @@ assign pix_axi_rready = 'b1;
 
 assign st_ready = 'b1;
 
+assign st_data            = 'b0;
+assign st_valid           = 'b0;
+assign st_endofpacket     = 'b0;
+assign st_startofpacket   = 'b0;
+
 `endif
 
 `ifdef DSI_EN
 //* DSI +
 dsi_tx_top #(
-    .LINE_WIDTH            (640     ),
-    .BITS_PER_PIXEL        (24      ),
-    .BLANK_TIME            (640+40  ),
-    .BLANK_TIME_HBP_ACT    (40      ),
-    .VSA_LINES_NUMBER      (3       ),
-    .VBP_LINES_NUMBER      (13      ),
-    .IMAGE_HEIGHT          (1136    ),
-    .VFP_LINES_NUMBER      (348     )
+    .LINE_WIDTH            (640       ),      // 640     |  640        |   1136      //
+    .BITS_PER_PIXEL        (24        ),      // 24      |  24         |   24       //
+    .BLANK_TIME            (120 ),      // 640+40  |  640 + 200  |   1136+40   //
+    .BLANK_TIME_HBP_ACT    (70        ),      // 40      |  70         |   40       //
+    .VSA_LINES_NUMBER      (3         ),      // 3       |  2          |   3        //
+    .VBP_LINES_NUMBER      (13        ),      // 13      |  4          |   13       //
+    .IMAGE_HEIGHT          (1136      ),      // 1136    |  480        |   640     //
+    .VFP_LINES_NUMBER      (348       )       // 348     |  4          |   348      //
     ) dsi_tx_top_0 (
     /********* System signals *********/
     .clk_sys                                (sys_clk                    ),
@@ -1527,8 +1532,8 @@ assign ctrl_sys_timer_waitrequest = 'b0;
 `ifdef PG_EN
 //* PAttern GENERATOR
 pattern_generator  #(
-    .IMG_HEIGH(1136),
-    .IMG_WIDTH(640)
+    .IMG_HEIGH(1136),    //640
+    .IMG_WIDTH(640)      //480
 )pattern_generator_0(
     .clk                        (sys_clk                ),
     .rst_n                      (sys_rst_n              ),
@@ -1576,7 +1581,7 @@ wire CLKFBOUT;
 wire CLKFBIN;
 wire CLKOUT0; //* 464 MHz   928/2
 wire CLKOUT1; //* 464 with shift
-wire CLKOUT2; //*  52MHz = CLKOUT0 / 8
+wire CLKOUT2; //*  58MHz = CLKOUT0 / 8
 wire CLKOUT3; //* 92.8 MHZ
 wire CLKOUT4; //* 32 MHz
 wire CLKOUT5; //* 333 MHz for DDR
@@ -1613,6 +1618,8 @@ IBUFG #(
       .I(clk_in)  // Clock buffer input (connect directly to top-level port)
    );
 
+localparam DSI_PHY_DIV = 4; //10
+
 PLL_BASE #(
     .BANDWIDTH("OPTIMIZED"),             // "HIGH", "LOW" or "OPTIMIZED"
     .CLKFBOUT_MULT(29),                   // Multiply value for all CLKOUT clock outputs (1-64)
@@ -1620,9 +1627,9 @@ PLL_BASE #(
     .CLKIN_PERIOD(31.25),                  // Input clock period in ns to ps resolution (i.e. 33.333 is 30
                                          // MHz).
     // CLKOUT0_DIVIDE - CLKOUT5_DIVIDE: Divide amount for CLKOUT# clock output (1-128)
-    .CLKOUT0_DIVIDE(2),
-    .CLKOUT1_DIVIDE(2),
-    .CLKOUT2_DIVIDE(16),
+    .CLKOUT0_DIVIDE(DSI_PHY_DIV),
+    .CLKOUT1_DIVIDE(DSI_PHY_DIV),
+    .CLKOUT2_DIVIDE(DSI_PHY_DIV*8),
     .CLKOUT3_DIVIDE(10), // 10
     .CLKOUT4_DIVIDE(29),
     .CLKOUT5_DIVIDE(3),
@@ -1635,7 +1642,7 @@ PLL_BASE #(
     .CLKOUT5_DUTY_CYCLE(0.5),
     // CLKOUT0_PHASE - CLKOUT5_PHASE: Output phase relationship for CLKOUT# clock output (-360.0-360.0).
     .CLKOUT0_PHASE(0.0),
-    .CLKOUT1_PHASE(180.0),
+    .CLKOUT1_PHASE(90.0),
     .CLKOUT2_PHASE(0.0),
     .CLKOUT3_PHASE(0.0),
     .CLKOUT4_PHASE(0.0),

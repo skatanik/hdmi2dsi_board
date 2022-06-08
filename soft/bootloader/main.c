@@ -61,6 +61,44 @@ int main(void)
     USART_init(100);  // 115200
 
     // first_timestamp = SYS_TIMER_read_state();
+/*******************************************************************/
+
+    volatile int kk;
+    // Enable lines
+    DSI->dsi_reg_cr |= 1<<1;
+    while(!(DSI->dsi_reg_isr & (1<<1))) {};
+
+    // send sleep out CMD
+    DSI->dsi_reg_cmd = 0x11;
+    DSI->dsi_reg_cr|= 1<<3;
+    while(!(DSI->dsi_reg_isr & (1<<4))) {};
+
+    for(kk = 0; kk < 500; kk++)
+        {}
+
+
+    // run DSI clk
+    DSI->dsi_reg_cr |= 1<<2;
+    while(!(DSI->dsi_reg_isr & (1<<1))) {};
+
+    // send Display ON
+    DSI->dsi_reg_cmd = 0x29;
+    DSI->dsi_reg_cr |= 1<<3;
+    while(!(DSI->dsi_reg_isr & (1<<4))) {};
+
+    WRITE_REG(0x01010104, 1); // run PG
+
+    for(kk = 0; kk < 500; kk++)
+        {}
+
+
+    // // PIX_READER->control_reg = 1;
+    // // run assembler
+    DSI->dsi_reg_cr |= 1;
+
+    GPIO->gpio_cr |= 1<<1; // backlight enable
+
+/*******************************************************************/
 
     USART_send_byte_blocking(0x20);
 

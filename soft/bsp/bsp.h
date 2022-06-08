@@ -59,7 +59,8 @@ typedef struct
 
 typedef struct
 {
-    volatile uint32_t gpio_cr;
+    volatile uint32_t pg_source;
+    volatile uint32_t pg_cr;
 }td_patget_struct;
 
 #define HDMI_RECV  ((td_hdmi_recv_struct *) 0x01010000)

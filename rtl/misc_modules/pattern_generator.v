@@ -98,7 +98,7 @@ always @(posedge clk or negedge rst_n) begin
 end
 
 always @(posedge clk or negedge rst_n) begin
-    if(!rst_n)                  dma_enable <= 1'b1;
+    if(!rst_n)                  dma_enable <= 1'b0;
     else if(sys_write_req[1])   dma_enable <= sys_write_data[0];
 end
 
@@ -120,7 +120,8 @@ reg [31:0] data_counter;
 
 always @(posedge clk or negedge rst_n) begin
     if(!rst_n)                                  rgb_reg <= 24'd0;
-    else if(en_del[0] & st_out_ready)           rgb_reg <= rgb_reg + 1 + (1 << 8) + (1 << 16);
+    else if(en_del[0] & st_out_ready)           rgb_reg <= 24'hFFFFFF;
+    // else if(en_del[0] & st_out_ready)           rgb_reg <= rgb_reg + 1 + (1 << 8) + (1 << 16);
 end
 
 wire last_data;
